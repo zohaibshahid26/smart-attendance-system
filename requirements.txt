@@ -1,0 +1,6 @@
+flask
+pymongo
+numpy
+opencv-python
+face-recognition
+dlib-bin

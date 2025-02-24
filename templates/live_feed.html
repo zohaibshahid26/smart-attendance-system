@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Feed</title>
+</head>
+
+<body>
+    <h1>Live Feed</h1>
+    <div>
+        <img id="liveFeed" src="{{ url_for('video_feed') }}" width="640" height="480">
+    </div>
+    <button onclick="markAttendance()">Mark Attendance</button>
+    <p id="message"></p>
+
+    <script>
+        function markAttendance() {
+            fetch('/mark_attendance', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('message').innerText = data.message || data.error;
+                })
+                .catch(error => {
+                    document.getElementById('message').innerText = 'Error: ' + error;
+                });
+        }
+
+        // Stop the camera when leaving the page
+        window.addEventListener("beforeunload", function () {
+            fetch('/stop_camera', { method: 'POST' });
+        });
+    </script>
+</body>
+
+</html>
