@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #2d3748;
+        }
+
+        .dark-mode .text-blue-600 {
+            color: #63b3ed;
+        }
+
+        .dark-mode .text-white {
+            color: #1a202c;
+        }
+
+        .dark-mode .bg-gray-800 {
+            background-color: #4a5568;
+        }
+
+        .dark-mode .bg-purple-500 {
+            background-color: #805ad5;
+        }
+
+        .dark-mode .border-gray-200 {
+            border-color: #4a5568;
+        }
+
+        .dark-mode .bg-gray-200 {
+            background-color: #4a5568;
+        }
+
+        .dark-mode .hover\:bg-gray-100:hover {
+            background-color: #2d3748;
+        }
+
+        .dark-mode .shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-mode .hover\:shadow-xl:hover {
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark-mode .hover\:bg-purple-700:hover {
+            background-color: #6b46c1;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
+    id="body">
+
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" class="absolute top-4 right-4 px-4 py-2 bg-gray-800 text-white rounded shadow">
+        🌙 Dark Mode
+    </button>
+
+    <h1 class="text-3xl font-bold text-blue-600 mb-6">Attendance Records</h1>
+
+    <!-- Date Picker -->
+    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md text-center">
+        <h2 class="text-xl font-semibold mb-4">Select Date</h2>
+        <input type="date" id="date" class="border p-2 rounded w-full mb-2">
+        <button onclick="fetchAttendance()"
+            class="bg-purple-500 text-white px-4 py-2 rounded transition-all duration-300 hover:bg-purple-700">
+            View Attendance
+        </button>
+    </div>
+
+    <!-- Search & Table Container -->
+    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-4xl mt-6 text-center">
+        <h2 class="text-xl font-semibold mb-4">Attendance Records</h2>
+
+        <!-- Search Box -->
+        <input type="text" id="searchBox" placeholder="Search by name..."
+            class="border p-2 rounded w-full mb-3 transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden text-purple-500 font-semibold my-3">Loading...</div>
+
+        <div class="overflow-x-auto">
+            <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="py-2 border px-4">Name</th>
+                        <th class="py-2 border px-4">Email</th>
+                        <th class="py-2 border px-4">Phone</th>
+                        <th class="py-2 border px-4">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceList" class="text-left"></tbody>
+            </table>
+        </div>
+
+        <!-- No Records Message -->
+        <p id="noRecords" class="text-gray-500 mt-3 hidden">No attendance records found.</p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("date").setAttribute("max", today);
+        });
+
+        function fetchAttendance() {
+            let date = document.getElementById("date").value;
+            if (!date) {
+                alert("Please select a date.");
+                return;
+            }
+
+            document.getElementById("loading").classList.remove("hidden"); // Show loading
+            document.getElementById("attendanceList").innerHTML = ""; // Clear old data
+            document.getElementById("noRecords").classList.add("hidden"); // Hide no record message
+
+            $.get("/fetch_attendance", { date: date }, function (data) {
+                let list = document.getElementById("attendanceList");
+                document.getElementById("loading").classList.add("hidden"); // Hide loading
+                list.innerHTML = "";
+
+                if (data.length === 0) {
+                    document.getElementById("noRecords").classList.remove("hidden");
+                } else {
+                    data.forEach(record => {
+                        let row = document.createElement("tr");
+                        row.classList.add("hover:bg-gray-100", "transition-all");
+                        row.innerHTML = `<td class='py-2 border px-4'>${record.name}</td>
+                                         <td class='py-2 border px-4'>${record.email}</td>
+                                         <td class='py-2 border px-4'>${record.phone}</td>
+                                         <td class='py-2 border px-4'>${record.timestamp}</td>`;
+                        list.appendChild(row);
+                    });
+                }
+            });
+        }
+
+        // Live Search Feature
+        document.getElementById("searchBox").addEventListener("input", function () {
+            let filter = this.value.toLowerCase();
+            let rows = document.getElementById("attendanceList").getElementsByTagName("tr");
+
+            for (let row of rows) {
+                let nameCell = row.getElementsByTagName("td")[0];
+                if (nameCell) {
+                    let name = nameCell.textContent.toLowerCase();
+                    row.style.display = name.includes(filter) ? "" : "none";
+                }
+            }
+        });
+
+        // Dark Mode Toggle
+        document.getElementById("darkModeToggle").addEventListener("click", function () {
+            document.getElementById("body").classList.toggle("dark-mode");
+        });
+
+    </script>
+</body>
+
+</html>

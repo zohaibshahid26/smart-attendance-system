@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 fade-in">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center">Verify OTP</h1>
+        <form id="verifyOtpForm" method="post" class="space-y-4">
+            <div class="mb-4">
+                <label for="otp" class="block text-gray-700">OTP</label>
+                <input type="text" id="otp" name="otp" class="w-full p-2 border rounded" required>
+            </div>
+            <button type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300 w-full">Verify
+                OTP</button>
+        </form>
+        <div class="mt-4 text-center space-y-2">
+            <span id="countdown" class="text-gray-600"></span>
+            <button id="resendOtpBtn"
+                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-700 transition duration-300 w-full"
+                disabled>Resend OTP</button>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let countdownTime = 120; // 2 minutes
+            const countdownElement = $('#countdown');
+            const resendOtpBtn = $('#resendOtpBtn');
+
+            function startCountdown() {
+                const interval = setInterval(() => {
+                    if (countdownTime <= 0) {
+                        clearInterval(interval);
+                        resendOtpBtn.prop('disabled', false);
+                        countdownElement.text('');
+                    } else {
+                        countdownTime--;
+                        const minutes = Math.floor(countdownTime / 60);
+                        const seconds = countdownTime % 60;
+                        countdownElement.text(`Resend OTP in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+                    }
+                }, 1000);
+            }
+
+            startCountdown();
+
+            $('#verifyOtpForm').on('submit', function (e) {
+                e.preventDefault();
+                const otp = $('#otp').val();
+                $.ajax({
+                    url: '/verify_otp',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ otp: otp }),
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.href = '/reset_password';
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function (error) {
+                        alert('Error occurred');
+                    }
+                });
+            });
+
+            resendOtpBtn.on('click', function () {
+                $.ajax({
+                    url: '/resend_otp',
+                    method: 'POST',
+                    success: function (response) {
+                        if (response.success) {
+                            alert('OTP resent successfully');
+                            countdownTime = 120;
+                            resendOtpBtn.prop('disabled', true);
+                            startCountdown();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function (error) {
+                        alert('Error occurred');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

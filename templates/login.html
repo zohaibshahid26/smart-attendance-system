@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Smart Attendance System</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border-radius: 10px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #007bff;
+        }
+
+        .dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
+        }
+
+        .dark-mode .card {
+            background-color: #2d3748;
+            color: #cbd5e0;
+        }
+
+        .dark-mode .btn-primary {
+            background-color: #3182ce;
+        }
+
+        .dark-mode .btn-primary:hover {
+            background-color: #2b6cb0;
+        }
+
+        .dark-mode .form-control {
+            background-color: #2d3748;
+            color: #cbd5e0;
+            border-color: #4a5568;
+        }
+
+        .dark-mode .form-control:focus {
+            box-shadow: none;
+            border-color: #63b3ed;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column align-items-center justify-content-center vh-100 transition-all duration-500" id="body">
+    <div class="text-center mb-4">
+        <h1 class="text-primary">Smart Attendance System</h1>
+        <p class="text-muted">Please login to access the admin dashboard.</p>
+    </div>
+    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
+        <h2 class="text-center mb-4">Admin Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            <div class="mt-4">
+                <a href="/forget_password" class="text-blue-600 hover:underline">Forgot Password?</a>
+            </div>
+        </form>
+        <div id="message" class="mt-3 text-danger text-center"></div>
+    </div>
+    <button id="darkModeToggle" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded shadow">🌙 Dark Mode</button>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';
+                    } else {
+                        document.getElementById('message').innerText = data.message;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('message').innerText = 'Error: ' + error;
+                });
+        });
+
+        document.getElementById("darkModeToggle").addEventListener("click", function () {
+            document.getElementById("body").classList.toggle("dark-mode");
+        });
+    </script>
+</body>
+
+</html>

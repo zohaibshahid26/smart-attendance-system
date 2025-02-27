@@ -5,14 +5,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Feed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #liveFeed {
+            border: 2px solid #333;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
+        }
+
+        .dark-mode h1 {
+            color: #cbd5e0;
+        }
+
+        .dark-mode #liveFeed {
+            border-color: #cbd5e0;
+        }
+
+        .dark-mode button {
+            background-color: #3182ce;
+        }
+
+        .dark-mode button:hover {
+            background-color: #2b6cb0;
+        }
+
+        .dark-mode #message {
+            color: #cbd5e0;
+        }
+    </style>
 </head>
 
-<body>
+<body id="body">
     <h1>Live Feed</h1>
     <div>
-        <img id="liveFeed" src="{{ url_for('video_feed') }}" width="640" height="480">
+        <img id="liveFeed" src="{{ url_for('attendance.video_feed') }}" width="640" height="480">
     </div>
     <button onclick="markAttendance()">Mark Attendance</button>
+    <button onclick="window.location.href='/'">Back to Dashboard</button>
+    <button id="darkModeToggle" class="bg-gray-800 text-white px-4 py-2 rounded shadow">🌙 Dark Mode</button>
     <p id="message"></p>
 
     <script>
@@ -30,6 +98,10 @@
         // Stop the camera when leaving the page
         window.addEventListener("beforeunload", function () {
             fetch('/stop_camera', { method: 'POST' });
+        });
+
+        document.getElementById("darkModeToggle").addEventListener("click", function () {
+            document.getElementById("body").classList.toggle("dark-mode");
         });
     </script>
 </body>

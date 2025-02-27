@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register User</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #video {
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5">
+    <h1 class="text-3xl font-bold text-blue-600 mb-6">Register User</h1>
+
+    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md text-center">
+        <h2 class="text-xl font-semibold mb-4">Register User</h2>
+        <input type="text" id="name" placeholder="Enter Name" class="border p-2 rounded w-full mb-2">
+        <input type="email" id="email" placeholder="Enter Email" class="border p-2 rounded w-full mb-2">
+        <input type="tel" id="phone" placeholder="Enter Phone Number" class="border p-2 rounded w-full mb-2">
+        <div class="mt-4">
+            <video id="video" width="640" height="480" autoplay></video>
+            <button onclick="captureImage()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Capture
+                Image</button>
+        </div>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+        <button onclick="registerUser()" class="bg-blue-500 text-white px-4 py-2 rounded mt-4">Register</button>
+        <button onclick="goToDashboard()" class="bg-gray-500 text-white px-4 py-2 rounded mt-2">Back to
+            Dashboard</button>
+    </div>
+
+    <script>
+        let stream;
+
+        // Access the camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(s => {
+                stream = s;
+                document.getElementById('video').srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing the camera: " + err);
+            });
+
+        function captureImage() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.pause();
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        function registerUser() {
+            let name = document.getElementById("name").value;
+            let email = document.getElementById("email").value;
+            let phone = document.getElementById("phone").value;
+            const canvas = document.getElementById('canvas');
+            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+
+            if (!name || !email || !phone || !imageData) {
+                alert("Please fill in all fields and capture an image.");
+                return;
+            }
+
+            $.ajax({
+                url: "/register",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ name: name, email: email, phone: phone, image: imageData }),
+                success: function (response) {
+                    alert(response.message);
+                },
+                error: function (xhr, status, error) {
+                    alert(xhr.responseJSON?.error || "Error: " + status + " - " + error);
+                }
+            });
+        }
+
+        function goToDashboard() {
+            window.location.href = "/";
+        }
+    </script>
+</body>
+
+</html>

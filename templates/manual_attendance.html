@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Attendance</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5">
+    <header class="w-full flex justify-between items-center p-4 bg-white shadow-md">
+        <h1 class="text-3xl font-bold text-blue-600">Manual Attendance</h1>
+        <div class="flex items-center">
+            <span class="mr-4">Logged in as admin</span>
+            <button onclick="confirmLogout()"
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300">Logout</button>
+        </div>
+    </header>
+
+    <main class="flex flex-col items-center justify-center flex-grow w-full">
+        <div class="bg-white p-8 shadow-lg rounded-lg w-full max-w-4xl mt-8">
+            <h2 class="text-2xl font-semibold mb-6 text-center">Mark Attendance Manually</h2>
+            <input type="date" id="attendanceDate" class="border rounded p-2 mb-4 w-full">
+            <button onclick="fetchUsersAttendance()"
+                class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300 mb-4">Fetch
+                Users</button>
+            <div id="usersList" class="w-full">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 border-b">Name</th>
+                            <th class="py-2 px-4 border-b">Email</th>
+                            <th class="py-2 px-4 border-b">Phone</th>
+                            <th class="py-2 px-4 border-b">Attendance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- User rows will be appended here -->
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="saveAttendance()"
+                class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-300 mt-4">Save
+                Attendance</button>
+        </div>
+    </main>
+
+    <script>
+        function confirmLogout() {
+            if (confirm("Are you sure you want to logout?")) {
+                fetch('/logout', { method: 'GET' })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        } else {
+                            alert("Logout failed.");
+                        }
+                    })
+                    .catch(error => {
+                        alert("Error: " + error);
+                    });
+            }
+        }
+
+        function fetchUsersAttendance() {
+            const date = document.getElementById("attendanceDate").value;
+            if (!date) {
+                alert("Please select a date.");
+                return;
+            }
+            fetch(`/fetch_users_attendance?date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    const usersTableBody = document.getElementById("usersTableBody");
+                    usersTableBody.innerHTML = "";
+                    data.forEach(user => {
+                        const userRow = document.createElement("tr");
+                        userRow.innerHTML = `
+                            <td class="py-2 px-4 border-b">${user.name}</td>
+                            <td class="py-2 px-4 border-b">${user.email}</td>
+                            <td class="py-2 px-4 border-b">${user.phone}</td>
+                            <td class="py-2 px-4 border-b text-center">
+                                <input type="checkbox" ${user.attended ? "checked" : ""} data-name="${user.name}">
+                            </td>
+                        `;
+                        usersTableBody.appendChild(userRow);
+                    });
+                })
+                .catch(error => {
+                    alert("Error: " + error);
+                });
+        }
+
+        function saveAttendance() {
+            const date = document.getElementById("attendanceDate").value;
+            if (!date) {
+                alert("Please select a date.");
+                return;
+            }
+            const usersList = document.getElementById("usersTableBody").querySelectorAll("input[type='checkbox']");
+            const users = Array.from(usersList).map(checkbox => ({
+                name: checkbox.getAttribute("data-name"),
+                attended: checkbox.checked
+            }));
+            fetch("/save_manual_attendance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ date, users })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    alert("Error: " + error);
+                });
+        }
+    </script>
+</body>
+
+</html>

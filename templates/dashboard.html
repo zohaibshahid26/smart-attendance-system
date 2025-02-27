@@ -7,66 +7,161 @@
     <title>Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5">
-    <h1 class="text-3xl font-bold text-blue-600 mb-6">Smart Attendance System</h1>
-
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md text-center">
-        <h2 class="text-xl font-semibold mb-4">Register User</h2>
-        <input type="text" id="name" placeholder="Enter Name" class="border p-2 rounded w-full mb-2">
-        <input type="file" id="imageInput" accept="image/*" class="border p-2 rounded w-full mb-2">
-        <button onclick="registerUser()" class="bg-blue-500 text-white px-4 py-2 rounded">Register</button>
-    </div>
-
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md mt-6 text-center">
-        <h2 class="text-xl font-semibold mb-4">Mark Attendance</h2>
-        <a href="/mark_attendance" class="bg-green-500 text-white px-4 py-2 rounded">Start Attendance</a>
-    </div>
-
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md mt-6 text-center">
-        <h2 class="text-xl font-semibold mb-4">Attendance Records</h2>
-        <button onclick="fetchAttendance()" class="bg-purple-500 text-white px-4 py-2 rounded">View Attendance</button>
-        <ul id="attendanceList" class="mt-4 text-left"></ul>
-    </div>
-
-    <script>
-        function registerUser() {
-            let name = document.getElementById("name").value;
-            let file = document.getElementById("imageInput").files[0];
-            if (!name || !file) {
-                alert("Please enter a name and select an image.");
-                return;
-            }
-            let reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function () {
-                let imageData = reader.result.split(',')[1];
-                $.ajax({
-                    url: "/register",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ name: name, image: imageData }),
-                    success: function (response) {
-                        alert(response.message);
-                    },
-                    error: function (xhr, status, error) {
-                        alert(xhr.responseJSON?.error || "Error: " + status + " - " + error);
-                    }
-                });
-            };
+    <style>
+        .dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
         }
 
-        function fetchAttendance() {
-            $.get("/get_attendance", function (data) {
-                let list = document.getElementById("attendanceList");
-                list.innerHTML = "";
-                data.forEach(record => {
-                    let item = document.createElement("li");
-                    item.textContent = `${record.name} - ${record.timestamp}`;
-                    list.appendChild(item);
-                });
-            });
+        .dark-mode .bg-white {
+            background-color: #2d3748;
+        }
+
+        .dark-mode .text-blue-600 {
+            color: #63b3ed;
+        }
+
+        .dark-mode .text-white {
+            color: #1a202c;
+        }
+
+        .dark-mode .bg-red-500 {
+            background-color: #e53e3e;
+        }
+
+        .dark-mode .bg-blue-500 {
+            background-color: #3182ce;
+        }
+
+        .dark-mode .bg-green-500 {
+            background-color: #38a169;
+        }
+
+        .dark-mode .bg-purple-500 {
+            background-color: #805ad5;
+        }
+
+        .dark-mode .shadow-md {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .hover\:shadow-xl:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-mode .hover\:bg-red-700:hover {
+            background-color: #c53030;
+        }
+
+        .dark-mode .hover\:bg-blue-700:hover {
+            background-color: #2b6cb0;
+        }
+
+        .dark-mode .hover\:bg-green-700:hover {
+            background-color: #2f855a;
+        }
+
+        .dark-mode .hover\:bg-purple-700:hover {
+            background-color: #6b46c1;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
+    id="body">
+    <header class="w-full flex justify-between items-center p-4 bg-white shadow-md">
+        <h1 class="text-3xl font-bold text-blue-600">Smart Attendance System</h1>
+        <div class="flex items-center">
+            <span class="mr-4">Logged in as admin</span>
+            <button onclick="confirmLogout()"
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300">Logout</button>
+            <button id="darkModeToggle" class="ml-4 bg-gray-800 text-white px-4 py-2 rounded shadow">🌙 Dark
+                Mode</button>
+        </div>
+    </header>
+
+    <main class="flex flex-col items-center justify-center flex-grow w-full">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl mt-8">
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-blue-600">Register User</h2>
+                <a href="/register_user"
+                    class="bg-blue-500 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition duration-300">Register
+                    User</a>
+            </div>
+
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-green-600">Mark Attendance</h2>
+                <a href="/mark_attendance"
+                    class="bg-green-500 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition duration-300">Start
+                    Attendance</a>
+            </div>
+
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-purple-600">Attendance Records</h2>
+                <a href="/get_attendance"
+                    class="bg-purple-500 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition duration-300">View
+                    Attendance Records</a>
+            </div>
+
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-purple-600">Export Attendance</h2>
+                <input type="date" id="exportDate" class="border rounded p-2 mb-4 w-full">
+                <button onclick="exportAttendance()"
+                    class="bg-purple-500 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition duration-300">Export
+                    as CSV</button>
+            </div>
+
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-red-600">Manual Attendance</h2>
+                <a href="/manual_attendance"
+                    class="bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-700 transition duration-300">Mark
+                    Attendance Manually</a>
+            </div>
+
+            <div
+                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
+                <h2 class="text-2xl font-semibold mb-6 text-blue-600">Attendance Trends</h2>
+                <a href="/attendance_trends"
+                    class="bg-blue-500 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition duration-300">View
+                    Attendance Trends</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function confirmLogout() {
+            if (confirm("Are you sure you want to logout?")) {
+                fetch('/logout', { method: 'GET' })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        } else {
+                            alert("Logout failed.");
+                        }
+                    })
+                    .catch(error => {
+                        alert("Error: " + error);
+                    });
+            }
+        }
+
+        document.getElementById("darkModeToggle").addEventListener("click", function () {
+            document.getElementById("body").classList.toggle("dark-mode");
+        });
+
+        function exportAttendance() {
+            const date = document.getElementById("exportDate").value;
+            if (!date) {
+                alert("Please select a date.");
+                return;
+            }
+            window.location.href = `/export_attendance?date=${date}`;
         }
     </script>
 </body>
