@@ -7,65 +7,10 @@
     <title>Attendance Records</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .dark-mode {
-            background-color: #1a202c;
-            color: #cbd5e0;
-        }
-
-        .dark-mode .bg-white {
-            background-color: #2d3748;
-        }
-
-        .dark-mode .text-blue-600 {
-            color: #63b3ed;
-        }
-
-        .dark-mode .text-white {
-            color: #1a202c;
-        }
-
-        .dark-mode .bg-gray-800 {
-            background-color: #4a5568;
-        }
-
-        .dark-mode .bg-purple-500 {
-            background-color: #805ad5;
-        }
-
-        .dark-mode .border-gray-200 {
-            border-color: #4a5568;
-        }
-
-        .dark-mode .bg-gray-200 {
-            background-color: #4a5568;
-        }
-
-        .dark-mode .hover\:bg-gray-100:hover {
-            background-color: #2d3748;
-        }
-
-        .dark-mode .shadow-lg {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .dark-mode .hover\:shadow-xl:hover {
-            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .dark-mode .hover\:bg-purple-700:hover {
-            background-color: #6b46c1;
-        }
-    </style>
 </head>
 
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
     id="body">
-
-    <!-- Dark Mode Toggle -->
-    <button id="darkModeToggle" class="absolute top-4 right-4 px-4 py-2 bg-gray-800 text-white rounded shadow">
-        🌙 Dark Mode
-    </button>
 
     <h1 class="text-3xl font-bold text-blue-600 mb-6">Attendance Records</h1>
 
@@ -158,11 +103,6 @@
                     row.style.display = name.includes(filter) ? "" : "none";
                 }
             }
-        });
-
-        // Dark Mode Toggle
-        document.getElementById("darkModeToggle").addEventListener("click", function () {
-            document.getElementById("body").classList.toggle("dark-mode");
         });
 
     </script>

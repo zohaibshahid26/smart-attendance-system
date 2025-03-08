@@ -28,35 +28,6 @@
             box-shadow: none;
             border-color: #007bff;
         }
-
-        .dark-mode {
-            background-color: #1a202c;
-            color: #cbd5e0;
-        }
-
-        .dark-mode .card {
-            background-color: #2d3748;
-            color: #cbd5e0;
-        }
-
-        .dark-mode .btn-primary {
-            background-color: #3182ce;
-        }
-
-        .dark-mode .btn-primary:hover {
-            background-color: #2b6cb0;
-        }
-
-        .dark-mode .form-control {
-            background-color: #2d3748;
-            color: #cbd5e0;
-            border-color: #4a5568;
-        }
-
-        .dark-mode .form-control:focus {
-            box-shadow: none;
-            border-color: #63b3ed;
-        }
     </style>
 </head>
 
@@ -83,7 +54,6 @@
         </form>
         <div id="message" class="mt-3 text-danger text-center"></div>
     </div>
-    <button id="darkModeToggle" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded shadow">🌙 Dark Mode</button>
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', function (event) {
@@ -109,10 +79,6 @@
                 .catch(error => {
                     document.getElementById('message').innerText = 'Error: ' + error;
                 });
-        });
-
-        document.getElementById("darkModeToggle").addEventListener("click", function () {
-            document.getElementById("body").classList.toggle("dark-mode");
         });
     </script>
 </body>

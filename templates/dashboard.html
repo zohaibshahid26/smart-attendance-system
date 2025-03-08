@@ -7,64 +7,6 @@
     <title>Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .dark-mode {
-            background-color: #1a202c;
-            color: #cbd5e0;
-        }
-
-        .dark-mode .bg-white {
-            background-color: #2d3748;
-        }
-
-        .dark-mode .text-blue-600 {
-            color: #63b3ed;
-        }
-
-        .dark-mode .text-white {
-            color: #1a202c;
-        }
-
-        .dark-mode .bg-red-500 {
-            background-color: #e53e3e;
-        }
-
-        .dark-mode .bg-blue-500 {
-            background-color: #3182ce;
-        }
-
-        .dark-mode .bg-green-500 {
-            background-color: #38a169;
-        }
-
-        .dark-mode .bg-purple-500 {
-            background-color: #805ad5;
-        }
-
-        .dark-mode .shadow-md {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .dark-mode .hover\:shadow-xl:hover {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .dark-mode .hover\:bg-red-700:hover {
-            background-color: #c53030;
-        }
-
-        .dark-mode .hover\:bg-blue-700:hover {
-            background-color: #2b6cb0;
-        }
-
-        .dark-mode .hover\:bg-green-700:hover {
-            background-color: #2f855a;
-        }
-
-        .dark-mode .hover\:bg-purple-700:hover {
-            background-color: #6b46c1;
-        }
-    </style>
 </head>
 
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
@@ -75,8 +17,6 @@
             <span class="mr-4">Logged in as admin</span>
             <button onclick="confirmLogout()"
                 class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300">Logout</button>
-            <button id="darkModeToggle" class="ml-4 bg-gray-800 text-white px-4 py-2 rounded shadow">🌙 Dark
-                Mode</button>
         </div>
     </header>
 
@@ -150,10 +90,6 @@
                     });
             }
         }
-
-        document.getElementById("darkModeToggle").addEventListener("click", function () {
-            document.getElementById("body").classList.toggle("dark-mode");
-        });
 
         function exportAttendance() {
             const date = document.getElementById("exportDate").value;

@@ -9,7 +9,7 @@ import csv
 from io import StringIO
 import threading
 import os
-from utils import get_face_embedding, login_required
+from utils import get_face_embedding, login_required, send_attendance_email
 
 attendance_bp = Blueprint('attendance', __name__, template_folder="templates")
 
@@ -116,10 +116,11 @@ def mark_attendance():
             return jsonify({"error": "No face detected"}), 400
         
         # Compare embeddings with registered users using Euclidean Distance
-        users = list(users_collection.find({}, {"_id": 0, "name": 1, "face_embedding": 1}))
+        users = list(users_collection.find({}, {"_id": 0, "name": 1, "face_embedding": 1, "email": 1}))
         
         best_match = None
         min_distance = float("inf")
+        best_match_email = None
         
         for user in users:
             stored_embedding = np.array(user["face_embedding"], dtype=np.float16)
@@ -128,9 +129,12 @@ def mark_attendance():
                 if distance < min_distance:
                     min_distance = distance
                     best_match = user["name"]
+                    best_match_email = user["email"]
         
         if best_match:
-            attendance_collection.insert_one({"name": best_match, "timestamp": datetime.utcnow()})
+            timestamp = datetime.utcnow()
+            attendance_collection.insert_one({"name": best_match, "timestamp": timestamp})
+            send_attendance_email(best_match, timestamp, best_match_email)
             return jsonify({"message": "Attendance marked", "name": best_match})
         
         return jsonify({"error": "Face not recognized"}), 400
@@ -244,7 +248,11 @@ def save_manual_attendance():
         
         for user in data.get("users", []):
             if user.get("attended"):
-                attendance_collection.insert_one({"name": user["name"], "timestamp": datetime.utcnow()})
+                timestamp = datetime.utcnow()
+                attendance_collection.insert_one({"name": user["name"], "timestamp": timestamp})
+                user_data = users_collection.find_one({"name": user["name"]}, {"_id": 0, "email": 1})
+                if user_data and "email" in user_data:
+                    send_attendance_email(user["name"], timestamp, user_data["email"])
         
         return jsonify({"message": "Attendance saved successfully"})
     except Exception as e:
@@ -279,5 +287,3 @@ def attendance_trends_page():
         return render_template("attendance_trends.html")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Route
