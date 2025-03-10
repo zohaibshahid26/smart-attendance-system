@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance History - Smart Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-200">
+    <!-- Navigation Bar -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md p-4 mb-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/student/dashboard" class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600 dark:text-primary-400"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span class="font-semibold text-gray-800 dark:text-white">Smart Attendance</span>
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="/student/dashboard"
+                    class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">Dashboard</a>
+                <a href="/student/profile"
+                    class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400">Profile</a>
+                <a href="/student/logout"
+                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4">
+        <!-- Header with Stats -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h1 class="text-3xl font-bold mb-2 md:mb-0 text-primary-600 dark:text-primary-400">Attendance History</h1>
+
+            <!-- Quick Stats -->
+            <div class="flex space-x-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm px-4 py-2 flex items-center">
+                    <div class="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="text-sm font-medium">Present: {{ present_count|default(0) }}</span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm px-4 py-2 flex items-center">
+                    <div class="h-3 w-3 rounded-full bg-yellow-500 mr-2"></div>
+                    <span class="text-sm font-medium">Late: {{ late_count|default(0) }}</span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm px-4 py-2 flex items-center">
+                    <div class="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
+                    <span class="text-sm font-medium">Absent: {{ absent_count|default(0) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Records Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 card">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Attendance Records
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-gray-700">
+                            <th class="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300">Date</th>
+                            <th class="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300">Check-in Time
+                            </th>
+                            <th class="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr
+                            class="hover:bg-gray-50 dark:hover:bg-gray-750 border-b border-gray-200 dark:border-gray-700">
+                            <td class="py-3 px-4">{{ record.timestamp.split(' ')[0] }}</td>
+                            <td class="py-3 px-4">{{ record.timestamp.split(' ')[1] }}</td>
+                            <td class="py-3 px-4">
+                                {% if record.status == 'Present' %}
+                                <span
+                                    class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Present</span>
+                                {% elif record.status == 'Late' %}
+                                <span
+                                    class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Late</span>
+                                {% else %}
+                                <span
+                                    class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Absent</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not attendance_records %}
+                        <tr>
+                            <td colspan="3" class="py-8 text-center text-gray-500 dark:text-gray-400">
+                                No attendance records found
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mb-8">
+            <a href="/student/dashboard"
+                class="inline-flex items-center px-4 py-2 bg-primary-600 dark:bg-primary-700 text-white rounded-md hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>

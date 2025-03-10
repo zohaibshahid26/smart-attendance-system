@@ -221,6 +221,24 @@
                                 class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
                             <label for="phone" class="text-gray-600 dark:text-gray-400">Phone Number</label>
                         </div>
+                        <div class="float-label">
+                            <input type="password" id="password" placeholder=" "
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                            <label for="password" class="text-gray-600 dark:text-gray-400">Password</label>
+                            <div class="h-1 bg-gray-300 dark:bg-gray-600 rounded-full mt-1">
+                                <div id="passwordStrength"
+                                    class="h-full transition-all duration-300 rounded-full bg-gray-300 dark:bg-gray-600">
+                                </div>
+                            </div>
+                            <div id="passwordFeedback" class="text-xs mt-1"></div>
+                        </div>
+                        <div class="float-label">
+                            <input type="password" id="confirmPassword" placeholder=" "
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                            <label for="confirmPassword" class="text-gray-600 dark:text-gray-400">Confirm
+                                Password</label>
+                        </div>
+
                     </div>
 
                     <div>
@@ -318,6 +336,85 @@
                 showToast("Unable to access camera. Please check permissions.", "error");
             });
 
+        document.getElementById('password').addEventListener('input', function () {
+            checkPasswordStrength(this.value);
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function () {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            const feedback = document.getElementById('passwordFeedback');
+
+            if (confirmPassword === '') {
+                feedback.textContent = '';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                feedback.textContent = 'Passwords do not match';
+                feedback.className = 'text-xs mt-1 text-red-500 dark:text-red-400';
+            } else {
+                feedback.textContent = 'Passwords match';
+                feedback.className = 'text-xs mt-1 text-green-500 dark:text-green-400';
+            }
+        });
+
+        function checkPasswordStrength(password) {
+            const strengthBar = document.getElementById('passwordStrength');
+            const feedback = document.getElementById('passwordFeedback');
+
+            // If password is empty, reset everything
+            if (password === '') {
+                strengthBar.style.width = '0';
+                strengthBar.className = 'h-full w-0 transition-all duration-300 rounded-full';
+                feedback.textContent = '';
+                return;
+            }
+
+            // Calculate strength score
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            // Update the UI based on strength
+            switch (strength) {
+                case 0:
+                case 1:
+                    strengthBar.style.width = '20%';
+                    strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-red-500';
+                    feedback.textContent = 'Weak password';
+                    feedback.className = 'text-xs mt-1 text-red-500 dark:text-red-400';
+                    break;
+                case 2:
+                    strengthBar.style.width = '40%';
+                    strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-orange-500';
+                    feedback.textContent = 'Fair password';
+                    feedback.className = 'text-xs mt-1 text-orange-500 dark:text-orange-400';
+                    break;
+                case 3:
+                    strengthBar.style.width = '60%';
+                    strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-yellow-500';
+                    feedback.textContent = 'Good password';
+                    feedback.className = 'text-xs mt-1 text-yellow-500 dark:text-yellow-400';
+                    break;
+                case 4:
+                    strengthBar.style.width = '80%';
+                    strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-lime-500';
+                    feedback.textContent = 'Strong password';
+                    feedback.className = 'text-xs mt-1 text-lime-500 dark:text-lime-400';
+                    break;
+                case 5:
+                    strengthBar.style.width = '100%';
+                    strengthBar.className = 'h-full transition-all duration-300 rounded-full bg-green-500';
+                    feedback.textContent = 'Very strong password';
+                    feedback.className = 'text-xs mt-1 text-green-500 dark:text-green-400';
+                    break;
+            }
+        }
+
         function captureImage() {
             if (!imageCaptured) {
                 // Show capturing state
@@ -371,6 +468,8 @@
             const name = document.getElementById("name").value.trim();
             const email = document.getElementById("email").value.trim();
             const phone = document.getElementById("phone").value.trim();
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
             const registerBtn = document.getElementById("registerBtn");
             const loadingSpinner = document.getElementById("loadingSpinner");
 
@@ -399,6 +498,25 @@
                 return;
             }
 
+            // Password validation
+            if (!password) {
+                showToast("Please enter a password", "error");
+                document.getElementById("password").focus();
+                return;
+            }
+
+            if (password.length < 8) {
+                showToast("Password must be at least 8 characters long", "error");
+                document.getElementById("password").focus();
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showToast("Passwords do not match", "error");
+                document.getElementById("confirmPassword").focus();
+                return;
+            }
+
             if (!imageCaptured) {
                 showToast("Please capture your photo before registering", "error");
                 return;
@@ -420,6 +538,7 @@
                     name: name,
                     email: email,
                     phone: phone,
+                    password: password,  // Add password to the request
                     image: imageData
                 }),
                 success: function (response) {
@@ -431,6 +550,8 @@
                     document.getElementById("name").value = "";
                     document.getElementById("email").value = "";
                     document.getElementById("phone").value = "";
+                    document.getElementById("password").value = "";
+                    document.getElementById("confirmPassword").value = "";
 
                     // Reset UI state
                     setTimeout(() => {

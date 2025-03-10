@@ -184,17 +184,17 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div
                     class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-green-900 dark:to-green-800 transform hover:scale-105 stat-card flex flex-col justify-center">
-                    <p class="text-4xl font-bold text-green-600 dark:text-green-400">95%</p>
+                    <p class="text-4xl font-bold text-green-600 dark:text-green-400">{{ attendance_rate }}%</p>
                     <p class="text-gray-700 dark:text-gray-300 mt-2">Attendance Rate</p>
                 </div>
                 <div
                     class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-blue-900 dark:to-blue-800 transform hover:scale-105 stat-card flex flex-col justify-center">
-                    <p class="text-4xl font-bold text-blue-600 dark:text-blue-400">120</p>
+                    <p class="text-4xl font-bold text-blue-600 dark:text-blue-400">{{ registered_users }}</p>
                     <p class="text-gray-700 dark:text-gray-300 mt-2">Registered Users</p>
                 </div>
                 <div
                     class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-purple-900 dark:to-purple-800 transform hover:scale-105 stat-card flex flex-col justify-center">
-                    <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">5</p>
+                    <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">{{ todays_absentees }}</p>
                     <p class="text-gray-700 dark:text-gray-300 mt-2">Today's Absentees</p>
                 </div>
             </div>

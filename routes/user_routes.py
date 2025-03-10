@@ -4,9 +4,11 @@ import numpy as np
 import base64
 import cv2
 import os
+from datetime import datetime
 from utils import get_face_embedding, login_required
+from bcrypt import hashpw, gensalt  # Add this import for password hashing
 
-user_bp = Blueprint('user', __name__,template_folder="templates")
+user_bp = Blueprint('user', __name__, template_folder="templates")
 
 # Connect to MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
@@ -32,23 +34,34 @@ def register_user():
         name = data["name"]
         email = data["email"]
         phone = data["phone"]
+        password = data["password"]  # Get password from request
         image_data = base64.b64decode(data["image"])
         
-        # Convert to numpy array
+        existing_user = users_collection.find_one({"$or": [{"email": email}, {"phone": phone}]})
+        if existing_user:
+            return jsonify({"error": "User with this email or phone number already exists"}), 400
+        
+        # Convert image to numpy array
         np_arr = np.frombuffer(image_data, np.uint8)
         image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         
-        # Get face encoding
+        # Get face embedding
         face_embedding = get_face_embedding(image)
         if face_embedding is None:
             return jsonify({"error": "No face detected"}), 400
+        
+        # Hash the password
+        hashed_password = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
         
         # Save user to MongoDB
         user_data = {
             "name": name,
             "email": email,
             "phone": phone,
-            "face_embedding": np.array(face_embedding, dtype=np.float16).tolist()
+            "password": hashed_password,  # Store hashed password
+            "face_embedding": np.array(face_embedding, dtype=np.float16).tolist(),
+            "role": "student",  # Adding role for authorization purposes
+            "created_at": datetime.now()
         }
         users_collection.insert_one(user_data)
         return jsonify({"message": "User registered successfully"})

@@ -104,6 +104,13 @@ def stop_camera():
 def mark_attendance():
     video_stream.start()
     try:
+        # Get class name from request
+        data = request.json
+        class_name = data.get("class_name") if request.is_json else None
+        
+        if not class_name:
+            return jsonify({"error": "No class name provided"}), 400
+            
         frame = video_stream.get_frame()
         if frame is None:
             return jsonify({"error": "No frame captured"}), 400
@@ -114,11 +121,12 @@ def mark_attendance():
             return jsonify({"error": "No face detected"}), 400
         
         # Compare embeddings with registered users using Euclidean Distance
-        users = list(users_collection.find({}, {"_id": 0, "name": 1, "face_embedding": 1, "email": 1}))
+        users = list(users_collection.find({}, {"_id": 1, "name": 1, "face_embedding": 1, "email": 1}))
         
         best_match = None
         min_distance = float("inf")
         best_match_email = None
+        student_id = None
         
         for user in users:
             stored_embedding = np.array(user["face_embedding"], dtype=np.float16)
@@ -128,16 +136,18 @@ def mark_attendance():
                     min_distance = distance
                     best_match = user["name"]
                     best_match_email = user["email"]
+                    student_id = user["_id"]
         
-        if best_match:
+        if best_match_email:
             # Check if attendance already marked for today
-            today = datetime.utcnow()
+            today = datetime.now()
             start_of_day = datetime(today.year, today.month, today.day)
             end_of_day = datetime(today.year, today.month, today.day, 23, 59, 59)
             
             existing_attendance = attendance_collection.find_one({
-                "name": best_match,
-                "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
+                "email": best_match_email,
+                "timestamp": {"$gte": start_of_day, "$lte": end_of_day},
+                "class_name": class_name
             })
             
             if existing_attendance:
@@ -147,18 +157,26 @@ def mark_attendance():
                     "message": f"Attendance already marked at {attendance_time}",
                     "name": best_match,
                     "alreadyMarked": True,
-                    "time": attendance_time
+                    "time": attendance_time,
+                    "class_name": class_name
                 })
             
             # Mark new attendance
-            timestamp = datetime.utcnow()
-            attendance_collection.insert_one({"name": best_match, "timestamp": timestamp})
+            timestamp = datetime.now()
+            attendance_collection.insert_one({
+                "name": best_match, 
+                "timestamp": timestamp, 
+                "email": best_match_email,
+                "student_id": student_id,
+                "class_name": class_name
+            })
             send_attendance_email(best_match, timestamp, best_match_email)
             return jsonify({
                 "message": "Attendance marked successfully", 
                 "name": best_match,
                 "alreadyMarked": False,
-                "time": timestamp.strftime("%I:%M %p")
+                "time": timestamp.strftime("%I:%M %p"),
+                "class_name": class_name
             })
         
         return jsonify({"error": "Face not recognized"}), 400
@@ -187,12 +205,20 @@ def fetch_attendance():
         
         records = list(attendance_collection.find({"timestamp": {"$gte": start, "$lt": end}}))
         for record in records:
-            user = users_collection.find_one({"name": record["name"]}, {"_id": 0, "email": 1, "phone": 1})
+            # Convert all ObjectId fields to strings
             record["_id"] = str(record["_id"])
+            if "student_id" in record and record["student_id"]:
+                record["student_id"] = str(record["student_id"])
+                
             record["timestamp"] = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+            
+            user = users_collection.find_one({"name": record["name"]}, {"_id": 0, "email": 1, "phone": 1})
             if user:
                 record["email"] = user["email"]
                 record["phone"] = user["phone"]
+            # Include class name in the response if it exists
+            if "class_name" not in record:
+                record["class_name"] = "N/A"
         
         return jsonify(records)
     except Exception as e:
@@ -214,12 +240,13 @@ def export_attendance():
         # Create CSV
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Name", "Email", "Phone", "Timestamp"])
+        writer.writerow(["Name", "Email", "Phone", "Class", "Timestamp"])
         
         for record in records:
             user = users_collection.find_one({"name": record["name"]}, {"_id": 0, "email": 1, "phone": 1})
             timestamp = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
-            writer.writerow([record["name"], user["email"], user["phone"], timestamp])
+            class_name = record.get("class_name", "N/A")
+            writer.writerow([record["name"], user["email"], user["phone"], class_name, timestamp])
         
         output.seek(0)
         return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=attendance.csv"})
@@ -284,7 +311,7 @@ def save_manual_attendance():
 
             if attended and not existing_record:
                 # Mark attendance if not already marked
-                timestamp = datetime.utcnow()
+                timestamp = datetime.now()
                 attendance_collection.insert_one({"name": name, "timestamp": timestamp})
 
                 # Send email notification if email exists

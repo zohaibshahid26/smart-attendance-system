@@ -18,6 +18,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+def student_login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'student' not in session:
+            return redirect(url_for('auth.student_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Helper function to convert image to face embedding
 def get_face_embedding(image):
     try:
