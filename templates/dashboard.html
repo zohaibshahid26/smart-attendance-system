@@ -7,99 +7,233 @@
     <title>Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    },
+                    transitionProperty: {
+                        'height': 'height',
+                        'spacing': 'margin, padding',
+                    }
+                }
+            }
+        };
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .card-fixed-height {
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .stat-card {
+            height: 120px;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
-    id="body">
-    <header class="w-full flex justify-between items-center p-4 bg-white shadow-md">
-        <h1 class="text-3xl font-bold text-blue-600">Smart Attendance System</h1>
-        <div class="flex items-center">
-            <span class="mr-4">Logged in as admin</span>
-            <button onclick="confirmLogout()"
-                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300">Logout</button>
+<body class="bg-gray-50 font-[Poppins] min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-300">
+
+    <header
+        class="bg-white shadow-md sticky top-0 z-50 dark:bg-gray-800 dark:text-white transition-colors duration-300">
+        <div class="container mx-auto px-8 py-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-primary-600 dark:text-primary-400">Smart Attendance System</h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-700 dark:text-gray-300">Logged in as <strong>Admin</strong></span>
+                <button onclick="toggleDarkMode()" aria-label="Toggle dark mode" title="Toggle dark/light mode"
+                    class="bg-gray-200 dark:bg-gray-700 p-2 rounded-lg shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 flex items-center justify-center">
+                    <!-- Sun icon for dark mode (shown when in dark mode) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400 hidden dark:block"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Moon icon for light mode (shown when in light mode) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 block dark:hidden" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <button onclick="confirmLogout()"
+                    class="bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 transition-all duration-300">
+                    Logout
+                </button>
+            </div>
         </div>
     </header>
 
-    <main class="flex flex-col items-center justify-center flex-grow w-full">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl mt-8">
+    <main class="container mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-blue-600">Register User</h2>
-                <a href="/register_user"
-                    class="bg-blue-500 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition duration-300">Register
-                    User</a>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-primary-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-primary-600 dark:text-primary-400 mb-4 text-center">Register
+                        User</h2>
+                    <a href="/register_user"
+                        class="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-all duration-300 w-full text-center">
+                        Register Now
+                    </a>
+                </div>
             </div>
 
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-green-600">Mark Attendance</h2>
-                <a href="/mark_attendance"
-                    class="bg-green-500 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition duration-300">Start
-                    Attendance</a>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-blue-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-blue-600 dark:text-blue-400 mb-4 text-center">Mark Attendance
+                    </h2>
+                    <a href="/mark_attendance"
+                        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 w-full text-center">
+                        Start Attendance
+                    </a>
+                </div>
             </div>
 
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-purple-600">Attendance Records</h2>
-                <a href="/get_attendance"
-                    class="bg-purple-500 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition duration-300">View
-                    Attendance Records</a>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-purple-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-purple-600 dark:text-purple-400 mb-4 text-center">Attendance
+                        Records</h2>
+                    <a href="/get_attendance"
+                        class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-all duration-300 w-full text-center">
+                        View Records
+                    </a>
+                </div>
             </div>
 
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-purple-600">Export Attendance</h2>
-                <input type="date" id="exportDate" class="border rounded p-2 mb-4 w-full">
-                <button onclick="exportAttendance()"
-                    class="bg-purple-500 text-white px-8 py-4 rounded-lg hover:bg-purple-700 transition duration-300">Export
-                    as CSV</button>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-indigo-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2 text-center">Export
+                        Attendance</h2>
+                    <div class="flex flex-col space-y-2">
+                        <input type="date" id="exportDate"
+                            class="border p-2 rounded w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300">
+                        <button onclick="exportAttendance()"
+                            class="bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all duration-300 w-full">
+                            Export as CSV
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-red-600">Manual Attendance</h2>
-                <a href="/manual_attendance"
-                    class="bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-700 transition duration-300">Mark
-                    Attendance Manually</a>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-red-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4 text-center">Manual Attendance
+                    </h2>
+                    <a href="/manual_attendance"
+                        class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-all duration-300 w-full text-center">
+                        Manual Entry
+                    </a>
+                </div>
             </div>
 
             <div
-                class="bg-white p-8 shadow-lg rounded-lg text-center border border-gray-200 hover:shadow-2xl transition duration-300 transform hover:scale-105">
-                <h2 class="text-2xl font-semibold mb-6 text-blue-600">Attendance Trends</h2>
-                <a href="/attendance_trends"
-                    class="bg-blue-500 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition duration-300">View
-                    Attendance Trends</a>
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 dark:text-white border-t-4 border-teal-500 card-hover transition-all duration-300 card-fixed-height">
+                <div class="card-content">
+                    <h2 class="text-xl font-semibold text-teal-600 dark:text-teal-400 mb-4 text-center">Attendance
+                        Trends</h2>
+                    <a href="/attendance_trends"
+                        class="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-all duration-300 w-full text-center">
+                        View Trends
+                    </a>
+                </div>
             </div>
+
         </div>
+
+        <section class="mt-12">
+            <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-300 mb-6">Quick Statistics</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                    class="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-green-900 dark:to-green-800 transform hover:scale-105 stat-card flex flex-col justify-center">
+                    <p class="text-4xl font-bold text-green-600 dark:text-green-400">95%</p>
+                    <p class="text-gray-700 dark:text-gray-300 mt-2">Attendance Rate</p>
+                </div>
+                <div
+                    class="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-blue-900 dark:to-blue-800 transform hover:scale-105 stat-card flex flex-col justify-center">
+                    <p class="text-4xl font-bold text-blue-600 dark:text-blue-400">120</p>
+                    <p class="text-gray-700 dark:text-gray-300 mt-2">Registered Users</p>
+                </div>
+                <div
+                    class="bg-gradient-to-r from-purple-50 to-purple-100 p-6 rounded-xl text-center shadow-md hover:shadow-lg transition-all duration-300 dark:bg-gradient-to-r dark:from-purple-900 dark:to-purple-800 transform hover:scale-105 stat-card flex flex-col justify-center">
+                    <p class="text-4xl font-bold text-purple-600 dark:text-purple-400">5</p>
+                    <p class="text-gray-700 dark:text-gray-300 mt-2">Today's Absentees</p>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto text-center">
+            <p>© 2025 Smart Attendance System. All rights reserved.</p>
+            <p class="mt-2 text-gray-400">Contact: support@smartattendance.com | Privacy Policy</p>
+        </div>
+    </footer>
+
     <script>
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle("dark");
+            localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
+        }
+
+        // Check for dark mode preference on page load
+        if (localStorage.getItem("darkMode") === "true") {
+            document.documentElement.classList.add("dark");
+        }
+
         function confirmLogout() {
             if (confirm("Are you sure you want to logout?")) {
                 fetch('/logout', { method: 'GET' })
-                    .then(response => {
-                        if (response.ok) {
-                            window.location.href = '/login';
-                        } else {
-                            alert("Logout failed.");
-                        }
-                    })
-                    .catch(error => {
-                        alert("Error: " + error);
-                    });
+                    .then(response => response.ok ? window.location.href = '/login' : alert("Logout failed."))
+                    .catch(error => alert("Error: " + error));
             }
         }
 
         function exportAttendance() {
             const date = document.getElementById("exportDate").value;
-            if (!date) {
-                alert("Please select a date.");
-                return;
-            }
+            if (!date) return alert("Please select a date.");
             window.location.href = `/export_attendance?date=${date}`;
         }
     </script>
+
 </body>
 
 </html>

@@ -13,8 +13,6 @@ from utils import get_face_embedding, login_required, send_attendance_email
 
 attendance_bp = Blueprint('attendance', __name__, template_folder="templates")
 
-
-
 # Connect to MongoDB
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
@@ -132,10 +130,36 @@ def mark_attendance():
                     best_match_email = user["email"]
         
         if best_match:
+            # Check if attendance already marked for today
+            today = datetime.utcnow()
+            start_of_day = datetime(today.year, today.month, today.day)
+            end_of_day = datetime(today.year, today.month, today.day, 23, 59, 59)
+            
+            existing_attendance = attendance_collection.find_one({
+                "name": best_match,
+                "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
+            })
+            
+            if existing_attendance:
+                # Attendance already marked
+                attendance_time = existing_attendance["timestamp"].strftime("%I:%M %p")
+                return jsonify({
+                    "message": f"Attendance already marked at {attendance_time}",
+                    "name": best_match,
+                    "alreadyMarked": True,
+                    "time": attendance_time
+                })
+            
+            # Mark new attendance
             timestamp = datetime.utcnow()
             attendance_collection.insert_one({"name": best_match, "timestamp": timestamp})
             send_attendance_email(best_match, timestamp, best_match_email)
-            return jsonify({"message": "Attendance marked", "name": best_match})
+            return jsonify({
+                "message": "Attendance marked successfully", 
+                "name": best_match,
+                "alreadyMarked": False,
+                "time": timestamp.strftime("%I:%M %p")
+            })
         
         return jsonify({"error": "Face not recognized"}), 400
     except Exception as e:
@@ -212,26 +236,33 @@ def manual_attendance_page():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Route to fetch users and their attendance status for a specific date
 @attendance_bp.route("/fetch_users_attendance", methods=["GET"])
 @login_required
 def fetch_users_attendance():
     try:
         date_str = request.args.get("date")
         date = datetime.strptime(date_str, "%Y-%m-%d")
-        start = datetime(date.year, date.month, date.day)
-        end = datetime(date.year, date.month, date.day, 23, 59, 59)
-        
+
+        # Fetch all users
         users = list(users_collection.find({}, {"_id": 0, "name": 1, "email": 1, "phone": 1}))
-        attendance_records = list(attendance_collection.find({"timestamp": {"$gte": start, "$lt": end}}))
+
+        # Fetch attendance for the selected date
+        attendance_records = list(attendance_collection.find(
+            {"timestamp": {"$gte": date, "$lt": datetime(date.year, date.month, date.day, 23, 59, 59)}},
+            {"_id": 0, "name": 1}
+        ))
+
         attendance_names = {record["name"] for record in attendance_records}
-        
+
+        # Attach attendance status to users
         for user in users:
             user["attended"] = user["name"] in attendance_names
-        
+
         return jsonify(users)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # Route to save manual attendance
 @attendance_bp.route("/save_manual_attendance", methods=["POST"])
@@ -241,22 +272,33 @@ def save_manual_attendance():
         data = request.json
         date_str = data.get("date")
         date = datetime.strptime(date_str, "%Y-%m-%d")
-        start = datetime(date.year, date.month, date.day)
-        end = datetime(date.year, date.month, date.day, 23, 59, 59)
-        
-        attendance_collection.delete_many({"timestamp": {"$gte": start, "$lt": end}})
-        
+
         for user in data.get("users", []):
-            if user.get("attended"):
+            name = user.get("name")
+            attended = user.get("attended")
+
+            # Check if the user already has an attendance record
+            existing_record = attendance_collection.find_one(
+                {"name": name, "timestamp": {"$gte": date, "$lt": datetime(date.year, date.month, date.day, 23, 59, 59)}}
+            )
+
+            if attended and not existing_record:
+                # Mark attendance if not already marked
                 timestamp = datetime.utcnow()
-                attendance_collection.insert_one({"name": user["name"], "timestamp": timestamp})
-                user_data = users_collection.find_one({"name": user["name"]}, {"_id": 0, "email": 1})
+                attendance_collection.insert_one({"name": name, "timestamp": timestamp})
+
+                # Send email notification if email exists
+                user_data = users_collection.find_one({"name": name}, {"_id": 0, "email": 1})
                 if user_data and "email" in user_data:
-                    send_attendance_email(user["name"], timestamp, user_data["email"])
-        
-        return jsonify({"message": "Attendance saved successfully"})
+                    send_attendance_email(name, timestamp, user_data["email"])
+
+            elif not attended and existing_record:
+                # Remove attendance if it was marked previously
+                attendance_collection.delete_one({"name": name, "timestamp": existing_record["timestamp"]})
+
+        return jsonify({"message": "Attendance updated successfully"})
+
     except Exception as e:
-        print("Error in save_manual_attendance:", e)
         return jsonify({"error": str(e)}), 500
 
 # Route to fetch attendance data for graph

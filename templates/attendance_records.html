@@ -4,106 +4,593 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Records</title>
+    <title>Attendance Records - Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .date-input:focus {
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Custom calendar styling */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-color: transparent;
+            cursor: pointer;
+            color-scheme: light dark;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        .dark input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
-    id="body">
+<body class="bg-gray-50 font-[Poppins] min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Toast notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden max-w-md p-4 rounded-lg shadow-lg toast"></div>
 
-    <h1 class="text-3xl font-bold text-blue-600 mb-6">Attendance Records</h1>
-
-    <!-- Date Picker -->
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md text-center">
-        <h2 class="text-xl font-semibold mb-4">Select Date</h2>
-        <input type="date" id="date" class="border p-2 rounded w-full mb-2">
-        <button onclick="fetchAttendance()"
-            class="bg-purple-500 text-white px-4 py-2 rounded transition-all duration-300 hover:bg-purple-700">
-            View Attendance
-        </button>
-    </div>
-
-    <!-- Search & Table Container -->
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-4xl mt-6 text-center">
-        <h2 class="text-xl font-semibold mb-4">Attendance Records</h2>
-
-        <!-- Search Box -->
-        <input type="text" id="searchBox" placeholder="Search by name..."
-            class="border p-2 rounded w-full mb-3 transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-
-        <!-- Loading Indicator -->
-        <div id="loading" class="hidden text-purple-500 font-semibold my-3">Loading...</div>
-
-        <div class="overflow-x-auto">
-            <table id="attendanceTable" class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="py-2 border px-4">Name</th>
-                        <th class="py-2 border px-4">Email</th>
-                        <th class="py-2 border px-4">Phone</th>
-                        <th class="py-2 border px-4">Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody id="attendanceList" class="text-left"></tbody>
-            </table>
+    <header class="bg-white shadow-md sticky top-0 z-40 dark:bg-gray-800 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-500 mr-3" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <h1 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Attendance Records</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" aria-label="Toggle dark mode"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 hidden dark:block"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 block dark:hidden"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
+                <button onclick="goToDashboard()"
+                    class="group flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Dashboard
+                </button>
+            </div>
         </div>
+    </header>
 
-        <!-- No Records Message -->
-        <p id="noRecords" class="text-gray-500 mt-3 hidden">No attendance records found.</p>
-    </div>
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Date Selection -->
+                <div class="md:col-span-1">
+                    <div
+                        class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 border-t-4 border-primary-500 card-hover transition-all duration-300">
+                        <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500"
+                                viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            Select Date
+                        </h2>
+                        <div class="relative mb-4">
+                            <input type="date" id="date"
+                                class="w-full bg-gray-50 border border-gray-300 text-gray-900 dark:text-white dark:bg-gray-700 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:border-transparent date-input transition-all duration-300"
+                                max="{{ today }}">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400 dark:text-gray-300" fill="currentColor"
+                                    viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd"
+                                        d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <button onclick="fetchAttendance()" id="viewBtn"
+                            class="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-lg flex items-center justify-center transition-all duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                <path fill-rule="evenodd"
+                                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            View Attendance
+                        </button>
+
+                        <!-- Stats Summary -->
+                        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">Quick Summary</h3>
+                            <div id="summaryStats" class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center">
+                                    <div id="totalCount"
+                                        class="text-2xl font-bold text-primary-600 dark:text-primary-400">0</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Total Records</div>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center">
+                                    <div id="uniqueCount" class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                        0</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Unique Users</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Dates -->
+                    <div
+                        class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 mt-6 card-hover transition-all duration-300">
+                        <h2 class="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">Recent Dates</h2>
+                        <div id="recentDates" class="space-y-2">
+                            <div class="text-center text-sm text-gray-500 dark:text-gray-400 py-4">
+                                Select dates to view history
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="md:col-span-2">
+                    <div
+                        class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 border-t-4 border-primary-500 card-hover transition-all duration-300">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                            <h2
+                                class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center mb-3 sm:mb-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-primary-500"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                    <path fill-rule="evenodd"
+                                        d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                Attendance Records
+                                <span id="dateDisplay"
+                                    class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400"></span>
+                            </h2>
+
+                            <div class="relative w-full sm:w-64">
+                                <input type="text" id="searchBox" placeholder="Search by name or email..."
+                                    class="w-full bg-gray-50 border border-gray-300 text-gray-900 dark:text-white dark:bg-gray-700 dark:border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-300">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400 dark:text-gray-300" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="loading" class="hidden flex items-center justify-center py-10">
+                            <svg class="animate-spin h-8 w-8 text-primary-500" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            <span class="ml-2 text-primary-500 font-medium">Loading records...</span>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div class="overflow-x-auto">
+                            <table id="attendanceTable"
+                                class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 rounded-lg overflow-hidden">
+                                <thead>
+                                    <tr>
+                                        <th
+                                            class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Name</th>
+                                        <th
+                                            class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Email</th>
+                                        <th
+                                            class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Phone</th>
+                                        <th
+                                            class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                            Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceList"
+                                    class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+
+                            <!-- Empty State -->
+                            <div id="noRecords" class="hidden text-center py-10">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-16 w-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <p class="text-gray-500 dark:text-gray-400 text-lg font-medium">No attendance records
+                                    found for this date</p>
+                                <p class="text-gray-400 dark:text-gray-500 text-sm mt-1">Try selecting a different date
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Export Button -->
+                        <div class="mt-6 flex justify-end">
+                            <button id="exportBtn" onclick="exportToCSV()" disabled
+                                class="bg-gray-200 text-gray-500 px-4 py-2 rounded-lg flex items-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
+        // Store attendance data for export
+        let attendanceData = [];
+
+        // Remember selected dates
+        let recentDates = JSON.parse(localStorage.getItem('recentDates') || '[]');
+
+        // Initialize dark mode from preferences
+        if (localStorage.getItem("darkMode") === "true") {
+            document.documentElement.classList.add("dark");
+        }
+
+        // Set today's date as default
         document.addEventListener("DOMContentLoaded", function () {
             const today = new Date().toISOString().split('T')[0];
+            document.getElementById("date").value = today;
             document.getElementById("date").setAttribute("max", today);
+            updateRecentDatesUI();
+
+            // Fetch today's attendance by default
+            fetchAttendance();
         });
 
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle("dark");
+            localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
+        }
+
+        function goToDashboard() {
+            window.location.href = '/';
+        }
+
+        // Toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg toast ${type === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`;
+
+            // Show toast and hide after 3 seconds
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
         function fetchAttendance() {
+            document.getElementById('searchBox').value = '';
             let date = document.getElementById("date").value;
             if (!date) {
-                alert("Please select a date.");
+                showToast("Please select a date.", "error");
                 return;
             }
 
-            document.getElementById("loading").classList.remove("hidden"); // Show loading
-            document.getElementById("attendanceList").innerHTML = ""; // Clear old data
-            document.getElementById("noRecords").classList.add("hidden"); // Hide no record message
+            // Show loading state
+            document.getElementById("loading").classList.remove("hidden");
+            document.getElementById("attendanceList").innerHTML = "";
+            document.getElementById("noRecords").classList.add("hidden");
+            document.getElementById("exportBtn").disabled = true;
+            document.getElementById("exportBtn").classList.remove("bg-green-500", "hover:bg-green-600", "text-white");
+            document.getElementById("exportBtn").classList.add("bg-gray-200", "text-gray-500");
+
+            // Format date for display
+            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById("dateDisplay").textContent = `(${formattedDate})`;
+
+            // Add to recent dates if not already in the list
+            if (!recentDates.includes(date)) {
+                recentDates.unshift(date);
+                recentDates = recentDates.slice(0, 5); // Keep only last 5 dates
+                localStorage.setItem('recentDates', JSON.stringify(recentDates));
+                updateRecentDatesUI();
+            }
 
             $.get("/fetch_attendance", { date: date }, function (data) {
                 let list = document.getElementById("attendanceList");
-                document.getElementById("loading").classList.add("hidden"); // Hide loading
+                document.getElementById("loading").classList.add("hidden");
                 list.innerHTML = "";
+                attendanceData = data; // Store data for export
 
                 if (data.length === 0) {
                     document.getElementById("noRecords").classList.remove("hidden");
+                    // Update stats
+                    document.getElementById("totalCount").textContent = '0';
+                    document.getElementById("uniqueCount").textContent = '0';
                 } else {
-                    data.forEach(record => {
+                    // Enable export button
+                    document.getElementById("exportBtn").disabled = false;
+                    document.getElementById("exportBtn").classList.remove("bg-gray-200", "text-gray-500");
+                    document.getElementById("exportBtn").classList.add("bg-green-500", "hover:bg-green-600", "text-white");
+
+                    // Update stats
+                    document.getElementById("totalCount").textContent = data.length;
+                    const uniqueUsers = new Set(data.map(record => record.name)).size;
+                    document.getElementById("uniqueCount").textContent = uniqueUsers;
+
+                    data.forEach((record, index) => {
                         let row = document.createElement("tr");
-                        row.classList.add("hover:bg-gray-100", "transition-all");
-                        row.innerHTML = `<td class='py-2 border px-4'>${record.name}</td>
-                                         <td class='py-2 border px-4'>${record.email}</td>
-                                         <td class='py-2 border px-4'>${record.phone}</td>
-                                         <td class='py-2 border px-4'>${record.timestamp}</td>`;
+
+                        // Alternate row colors
+                        if (index % 2 === 0) {
+                            row.classList.add("bg-white", "dark:bg-gray-800");
+                        } else {
+                            row.classList.add("bg-gray-50", "dark:bg-gray-700");
+                        }
+
+                        row.classList.add("hover:bg-gray-100", "dark:hover:bg-gray-600", "transition-all");
+
+                        // Format timestamp to a more readable format
+                        const timestamp = new Date(record.timestamp);
+                        const formattedTime = timestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${record.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${record.email || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${record.phone || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${formattedTime}</td>
+                        `;
                         list.appendChild(row);
                     });
                 }
+            }).fail(function (error) {
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("noRecords").classList.remove("hidden");
+                showToast("Error fetching records: " + error.statusText, "error");
             });
         }
 
-        // Live Search Feature
-        document.getElementById("searchBox").addEventListener("input", function () {
-            let filter = this.value.toLowerCase();
-            let rows = document.getElementById("attendanceList").getElementsByTagName("tr");
+        function updateRecentDatesUI() {
+            const recentDatesContainer = document.getElementById("recentDates");
+            if (recentDates.length > 0) {
+                recentDatesContainer.innerHTML = "";
+                recentDates.forEach(date => {
+                    const dateObj = new Date(date);
+                    const formattedDate = dateObj.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
 
-            for (let row of rows) {
-                let nameCell = row.getElementsByTagName("td")[0];
-                if (nameCell) {
-                    let name = nameCell.textContent.toLowerCase();
-                    row.style.display = name.includes(filter) ? "" : "none";
-                }
+                    const dateItem = document.createElement("div");
+                    dateItem.classList.add("flex", "items-center", "justify-between", "p-2", "hover:bg-gray-100",
+                        "dark:hover:bg-gray-700", "rounded-md", "cursor-pointer", "transition-all");
+                    dateItem.innerHTML = `
+                        <span>${formattedDate}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${dayName}</span>
+                    `;
+                    dateItem.onclick = () => {
+                        document.getElementById("date").value = date;
+                        fetchAttendance();
+                    };
+                    recentDatesContainer.appendChild(dateItem);
+                });
+            } else {
+                recentDatesContainer.innerHTML = `
+                    <div class="text-center text-sm text-gray-500 dark:text-gray-400 py-4">
+                        Select dates to view history
+                    </div>
+                `;
             }
+        }
+
+        function exportToCSV() {
+            const csv = [
+                ['Name', 'Email', 'Phone', 'Timestamp']
+            ];
+            attendanceData.forEach(record => {
+                const timestamp = new Date(record.timestamp);
+                const formattedTime = timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                csv.push([record.name, record.email || 'N/A', record.phone || 'N/A', formattedTime]);
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + csv.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `attendance-${document.getElementById("date").value}.csv`);
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        // Search functionality
+        document.getElementById('searchBox').addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#attendanceList tr');
+            let matchCount = 0;
+
+            // Show "no records" message if no matches are found
+            if (rows.length === 0) return;
+
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const email = row.cells[1].textContent.toLowerCase();
+                const phone = row.cells[2].textContent.toLowerCase();
+
+                if (name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm)) {
+                    row.style.display = '';
+                    matchCount++;
+
+                    // Highlight matching text
+                    if (searchTerm) {
+                        highlightMatch(row.cells[0], searchTerm, name);
+                        highlightMatch(row.cells[1], searchTerm, email);
+                        highlightMatch(row.cells[2], searchTerm, phone);
+                    } else {
+                        // Reset highlights when search is cleared
+                        row.cells[0].innerHTML = row.cells[0].textContent;
+                        row.cells[1].innerHTML = row.cells[1].textContent;
+                        row.cells[2].innerHTML = row.cells[2].textContent;
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show or hide no records message
+            if (matchCount === 0 && searchTerm) {
+                document.getElementById('noRecords').classList.remove('hidden');
+                document.getElementById('noRecords').querySelector('p').textContent =
+                    `No results found`;
+            } else {
+                document.getElementById('noRecords').classList.add('hidden');
+            }
+
+            // Update stats for visible records
+            document.getElementById('totalCount').textContent = matchCount;
+            const visibleNames = new Set();
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    visibleNames.add(row.cells[0].textContent.trim());
+                }
+            });
+            document.getElementById('uniqueCount').textContent = visibleNames.size;
         });
+
+        // Function to highlight matching text
+        function highlightMatch(cell, searchTerm, originalText) {
+            if (!searchTerm) return;
+
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            cell.innerHTML = originalText.replace(
+                regex,
+                '<span class="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">$1</span>'
+            );
+        }
+
 
     </script>
 </body>

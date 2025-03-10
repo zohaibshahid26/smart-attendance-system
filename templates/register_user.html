@@ -4,86 +4,472 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register User</title>
+    <title>Register User - Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        #video {
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Improved floating label styling */
+        .float-label {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .float-label input {
+            height: 3.5rem;
+            padding: 1.5rem 0.75rem 0.5rem 0.75rem;
+            width: 100%;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .float-label label {
+            position: absolute;
+            left: 0.75rem;
+            top: 1.1rem;
+            font-size: 1rem;
+            transition: all 0.2s ease-out;
+            pointer-events: none;
+            background-color: transparent;
+        }
+
+        .float-label input:focus~label,
+        .float-label input:not(:placeholder-shown)~label {
+            font-size: 0.75rem;
+            top: 0.5rem;
+            color: #0ea5e9;
+            /* primary-500 */
+        }
+
+        .camera-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+
+        #video,
+        #preview {
             transform: scaleX(-1);
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
         }
     </style>
 </head>
 
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5">
-    <h1 class="text-3xl font-bold text-blue-600 mb-6">Register User</h1>
+<body class="bg-gray-50 font-[Poppins] min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Toast notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden max-w-md p-4 rounded-lg shadow-lg toast"></div>
 
-    <div class="bg-white p-6 shadow-lg rounded-lg w-full max-w-md text-center">
-        <h2 class="text-xl font-semibold mb-4">Register User</h2>
-        <input type="text" id="name" placeholder="Enter Name" class="border p-2 rounded w-full mb-2">
-        <input type="email" id="email" placeholder="Enter Email" class="border p-2 rounded w-full mb-2">
-        <input type="tel" id="phone" placeholder="Enter Phone Number" class="border p-2 rounded w-full mb-2">
-        <div class="mt-4">
-            <video id="video" width="640" height="480" autoplay></video>
-            <button onclick="captureImage()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Capture
-                Image</button>
+    <header class="bg-white shadow-md sticky top-0 z-40 dark:bg-gray-800 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-500 mr-3" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <h1 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Register New User</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" aria-label="Toggle dark mode"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 hidden dark:block"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 block dark:hidden"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
+                <button onclick="goToDashboard()"
+                    class="group flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Dashboard
+                </button>
+            </div>
         </div>
-        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
-        <button onclick="registerUser()" class="bg-blue-500 text-white px-4 py-2 rounded mt-4">Register</button>
-        <button onclick="goToDashboard()" class="bg-gray-500 text-white px-4 py-2 rounded mt-2">Back to
-            Dashboard</button>
-    </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 border-t-4 border-primary-500 card-hover transition-all duration-300">
+
+                <!-- Steps indicator -->
+                <div class="flex items-center justify-center mb-8">
+                    <div class="flex items-center">
+                        <div
+                            class="bg-primary-500 rounded-full h-8 w-8 flex items-center justify-center text-white font-medium">
+                            1</div>
+                        <div class="ml-2 text-sm font-medium text-primary-600 dark:text-primary-400">Details</div>
+                    </div>
+                    <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                    <div class="flex items-center">
+                        <div id="step2"
+                            class="bg-gray-300 dark:bg-gray-600 rounded-full h-8 w-8 flex items-center justify-center text-gray-700 dark:text-gray-300 font-medium">
+                            2</div>
+                        <div class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Photo</div>
+                    </div>
+                    <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                    <div class="flex items-center">
+                        <div id="step3"
+                            class="bg-gray-300 dark:bg-gray-600 rounded-full h-8 w-8 flex items-center justify-center text-gray-700 dark:text-gray-300 font-medium">
+                            3</div>
+                        <div class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Complete</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <!-- Fixed floating label inputs -->
+                        <div class="float-label">
+                            <input type="text" id="name" placeholder=" "
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                            <label for="name" class="text-gray-600 dark:text-gray-400">Full Name</label>
+                        </div>
+
+                        <div class="float-label">
+                            <input type="email" id="email" placeholder=" "
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                            <label for="email" class="text-gray-600 dark:text-gray-400">Email Address</label>
+                        </div>
+
+                        <div class="float-label">
+                            <input type="tel" id="phone" placeholder=" "
+                                class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300">
+                            <label for="phone" class="text-gray-600 dark:text-gray-400">Phone Number</label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="camera-container bg-gray-100 dark:bg-gray-700 p-3 rounded-lg shadow-inner">
+                            <div id="camera-frame" class="relative mb-3 bg-black rounded-lg overflow-hidden">
+                                <!-- Camera guide overlay -->
+                                <div
+                                    class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-50">
+                                    <svg width="200" height="200" viewBox="0 0 200 200" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg" class="text-white">
+                                        <circle cx="100" cy="100" r="98" stroke="currentColor" stroke-width="2"
+                                            stroke-dasharray="10 10" />
+                                    </svg>
+                                </div>
+                                <video id="video" autoplay class="w-full h-auto"></video>
+                                <img id="preview" class="w-full h-auto hidden" alt="Captured image">
+                                <div id="capturing"
+                                    class="hidden absolute inset-0 bg-white bg-opacity-10 flex items-center justify-center">
+                                    <div class="text-white font-semibold">Capturing...</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button id="captureBtn" onclick="captureImage()"
+                                    class="bg-primary-500 text-white px-4 py-3 rounded-lg hover:bg-primary-600 transition-all duration-300 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                    <span id="captureBtnText">Capture Photo</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+                <div class="mt-8 flex justify-center">
+                    <button id="registerBtn" onclick="registerUser()"
+                        class="relative bg-primary-600 text-white px-8 py-3 rounded-lg hover:bg-primary-700 transition-all duration-300 w-full md:w-1/2 flex items-center justify-center">
+                        <span>Register User</span>
+                        <span id="loadingSpinner" class="hidden absolute right-4">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
         let stream;
+        let imageCaptured = false;
 
-        // Access the camera
+        // Initialize dark mode from preferences
+        if (localStorage.getItem("darkMode") === "true") {
+            document.documentElement.classList.add("dark");
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle("dark");
+            localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
+        }
+
+        // Modern toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg toast ${type === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`;
+
+            // Show toast and hide after 3 seconds
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // No need for input focus event listeners anymore - CSS handles the floating labels
+
+        // Camera initialization
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(s => {
                 stream = s;
                 document.getElementById('video').srcObject = stream;
+                document.getElementById('step2').classList.add('bg-primary-100', 'text-primary-700', 'dark:bg-primary-900', 'dark:text-primary-300');
             })
             .catch(err => {
-                console.error("Error accessing the camera: " + err);
+                showToast("Unable to access camera. Please check permissions.", "error");
             });
 
         function captureImage() {
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            video.pause();
-            stream.getTracks().forEach(track => track.stop());
+            if (!imageCaptured) {
+                // Show capturing state
+                document.getElementById('capturing').classList.remove('hidden');
+
+                setTimeout(() => {
+                    const video = document.getElementById('video');
+                    const canvas = document.getElementById('canvas');
+                    const preview = document.getElementById('preview');
+                    const context = canvas.getContext('2d');
+
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    preview.src = canvas.toDataURL('image/jpeg');
+                    preview.classList.remove('hidden');
+                    video.classList.add('hidden');
+                    document.getElementById('capturing').classList.add('hidden');
+
+                    document.getElementById('captureBtnText').textContent = "Retake Photo";
+                    document.getElementById('captureBtn').classList.replace('bg-primary-500', 'bg-gray-500');
+                    document.getElementById('captureBtn').classList.replace('hover:bg-primary-600', 'hover:bg-gray-600');
+
+                    document.getElementById('step2').classList.add('bg-green-500', 'text-white');
+                    document.getElementById('step2').innerHTML = '✓';
+                    document.getElementById('step3').classList.add('bg-primary-100', 'text-primary-700', 'dark:bg-primary-900', 'dark:text-primary-300');
+
+                    imageCaptured = true;
+
+                    video.pause();
+                    stream.getTracks().forEach(track => track.stop());
+                }, 500);
+            } else {
+                // Reset camera
+                document.getElementById('preview').classList.add('hidden');
+                document.getElementById('video').classList.remove('hidden');
+                document.getElementById('captureBtnText').textContent = "Capture Photo";
+                document.getElementById('captureBtn').classList.replace('bg-gray-500', 'bg-primary-500');
+                document.getElementById('captureBtn').classList.replace('hover:bg-gray-600', 'hover:bg-primary-600');
+
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(s => {
+                        stream = s;
+                        document.getElementById('video').srcObject = stream;
+                        document.getElementById('video').play();
+                    });
+
+                imageCaptured = false;
+            }
         }
 
         function registerUser() {
-            let name = document.getElementById("name").value;
-            let email = document.getElementById("email").value;
-            let phone = document.getElementById("phone").value;
-            const canvas = document.getElementById('canvas');
-            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const registerBtn = document.getElementById("registerBtn");
+            const loadingSpinner = document.getElementById("loadingSpinner");
 
-            if (!name || !email || !phone || !imageData) {
-                alert("Please fill in all fields and capture an image.");
+            // Validation
+            if (!name) {
+                showToast("Please enter your full name", "error");
+                document.getElementById("name").focus();
                 return;
             }
+
+            if (!email) {
+                showToast("Please enter your email address", "error");
+                document.getElementById("email").focus();
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                showToast("Please enter a valid email address", "error");
+                document.getElementById("email").focus();
+                return;
+            }
+
+            if (!phone) {
+                showToast("Please enter your phone number", "error");
+                document.getElementById("phone").focus();
+                return;
+            }
+
+            if (!imageCaptured) {
+                showToast("Please capture your photo before registering", "error");
+                return;
+            }
+
+            // Show loading state
+            registerBtn.disabled = true;
+            loadingSpinner.classList.remove("hidden");
+
+            // Get image data
+            const canvas = document.getElementById('canvas');
+            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
 
             $.ajax({
                 url: "/register",
                 type: "POST",
                 contentType: "application/json",
-                data: JSON.stringify({ name: name, email: email, phone: phone, image: imageData }),
+                data: JSON.stringify({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    image: imageData
+                }),
                 success: function (response) {
-                    alert(response.message);
+                    document.getElementById('step3').classList.add('bg-green-500', 'text-white');
+                    document.getElementById('step3').innerHTML = '✓';
+                    showToast(response.message || "User registered successfully!", "success");
+
+                    // Reset form
+                    document.getElementById("name").value = "";
+                    document.getElementById("email").value = "";
+                    document.getElementById("phone").value = "";
+
+                    // Reset UI state
+                    setTimeout(() => {
+                        goToDashboard();
+                    }, 2000);
                 },
                 error: function (xhr, status, error) {
-                    alert(xhr.responseJSON?.error || "Error: " + status + " - " + error);
+                    showToast(xhr.responseJSON?.error || "Registration failed. Please try again.", "error");
+                },
+                complete: function () {
+                    registerBtn.disabled = false;
+                    loadingSpinner.classList.add("hidden");
                 }
             });
         }
 
+        function validateEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(email);
+        }
+
         function goToDashboard() {
+            if (stream && stream.getTracks) {
+                stream.getTracks().forEach(track => track.stop());
+            }
             window.location.href = "/";
         }
+
+        // Init any inputs with values to show labels correctly
+        window.onload = function () {
+            document.querySelectorAll('.float-label input').forEach(input => {
+                if (input.value.trim() !== '') {
+                    const label = input.nextElementSibling;
+                    label.style.fontSize = '0.75rem';
+                    label.style.top = '0.5rem';
+                    label.style.color = '#0ea5e9';
+                }
+            });
+        };
     </script>
 </body>
 

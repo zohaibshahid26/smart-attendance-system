@@ -4,30 +4,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Trends</title>
+    <title>Attendance Trends - Smart Attendance System</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    }
+                }
+            }
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 60vh;
+            width: 100%;
+        }
+
+        .time-filter-btn.active {
+            background-color: rgba(14, 165, 233, 0.2);
+            color: #0ea5e9;
+        }
+
+        .dark .time-filter-btn.active {
+            background-color: rgba(14, 165, 233, 0.4);
+            color: #7dd3fc;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-5 transition-all duration-500"
-    id="body">
-    <header class="w-full flex justify-between items-center p-4 bg-white shadow-md">
-        <h1 class="text-3xl font-bold text-blue-600">Attendance Trends</h1>
-        <div class="flex items-center">
-            <button onclick="confirmLogout()"
-                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700 transition duration-300">Logout</button>
+<body class="bg-gray-50 font-[Poppins] min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Toast notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden max-w-md p-4 rounded-lg shadow-lg toast"></div>
+
+    <header class="bg-white shadow-md sticky top-0 z-40 dark:bg-gray-800 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-500 mr-3" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Attendance Trends</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" aria-label="Toggle dark mode"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 hidden dark:block"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 block dark:hidden"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
+                <div class="flex items-center gap-3">
+                    <span
+                        class="hidden md:inline-block bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2 py-1 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Admin
+                    </span>
+                    <button onclick="goToDashboard()"
+                        class="group flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg transition-all duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 mr-1 transform group-hover:-translate-x-1 transition-transform"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button onclick="confirmLogout()"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-all duration-300 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <main class="flex flex-col items-center justify-center flex-grow w-full">
-        <div class="w-full max-w-6xl mt-8">
-            <h2 class="text-2xl font-semibold mb-6 text-blue-600">Attendance Trends</h2>
-            <canvas id="attendanceChart" class="w-full"></canvas>
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <div
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 border-t-4 border-primary-500 card-hover transition-all duration-300">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center mb-4 md:mb-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-primary-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Attendance Insights
+                    </h2>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            class="time-filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all active"
+                            data-period="week">Last Week</button>
+                        <button
+                            class="time-filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                            data-period="month">Last Month</button>
+                        <button
+                            class="time-filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                            data-period="year">Last Year</button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <div class="mb-4 flex flex-wrap gap-3 justify-center">
+                        <div
+                            class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm flex items-center gap-3 min-w-[180px]">
+                            <div class="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 dark:text-blue-300"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Total Attendance</div>
+                                <div class="text-lg font-semibold" id="totalAttendance">--</div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm flex items-center gap-3 min-w-[180px]">
+                            <div class="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-5 w-5 text-green-500 dark:text-green-300" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Average Per Day</div>
+                                <div class="text-lg font-semibold" id="avgAttendance">--</div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm flex items-center gap-3 min-w-[180px]">
+                            <div class="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-5 w-5 text-purple-500 dark:text-purple-300" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Highest Day</div>
+                                <div class="text-lg font-semibold" id="highestDay">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+
+                    <div class="text-center mt-4 text-xs text-gray-500 dark:text-gray-400" id="chartFooter">
+                        Showing attendance data for the last 7 days
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <script>
+        // Initialize dark mode from preferences
+        if (localStorage.getItem("darkMode") === "true") {
+            document.documentElement.classList.add("dark");
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle("dark");
+            localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
+
+            // Update chart theme if chart exists
+            if (window.attendanceChart) {
+                updateChartTheme();
+                window.attendanceChart.update();
+            }
+        }
+
+        function goToDashboard() {
+            window.location.href = '/';
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg toast ${type === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`;
+
+            // Show toast and hide after 3 seconds
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
         function confirmLogout() {
             if (confirm("Are you sure you want to logout?")) {
                 fetch('/logout', { method: 'GET' })
@@ -35,39 +273,136 @@
                         if (response.ok) {
                             window.location.href = '/login';
                         } else {
-                            alert("Logout failed.");
+                            showToast("Logout failed.", "error");
                         }
                     })
                     .catch(error => {
-                        alert("Error: " + error);
+                        showToast("Error: " + error, "error");
                     });
             }
         }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            fetch("/attendance_data")
-                .then(response => response.json())
+        function updateChartTheme() {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+
+            const textColor = isDarkMode ? '#e5e7eb' : '#6b7280';
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+            window.attendanceChart.options.scales.x.ticks.color = textColor;
+            window.attendanceChart.options.scales.y.ticks.color = textColor;
+            window.attendanceChart.options.scales.x.grid.color = gridColor;
+            window.attendanceChart.options.scales.y.grid.color = gridColor;
+        }
+
+        function fetchAttendanceData(period = 'week') {
+            // Show loading state
+            document.querySelector('.chart-container').innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                </div>
+            `;
+
+            // Update the footer text
+            let footerText;
+            switch (period) {
+                case 'week':
+                    footerText = 'Showing attendance data for the last 7 days';
+                    break;
+                case 'month':
+                    footerText = 'Showing attendance data for the last 30 days';
+                    break;
+                case 'year':
+                    footerText = 'Showing attendance data for the last 12 months';
+                    break;
+            }
+            document.getElementById('chartFooter').textContent = footerText;
+
+            fetch(`/attendance_data?period=${period}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    // Reset chart container
+                    document.querySelector('.chart-container').innerHTML = `<canvas id="attendanceChart"></canvas>`;
+
+                    // Extract data
                     const labels = data.map(item => item._id);
                     const counts = data.map(item => item.count);
 
+                    // Calculate stats
+                    const total = counts.reduce((sum, count) => sum + count, 0);
+                    const avg = (total / counts.length).toFixed(1);
+                    let highestDay = { date: '', count: 0 };
+                    data.forEach(item => {
+                        if (item.count > highestDay.count) {
+                            highestDay = { date: item._id, count: item.count };
+                        }
+                    });
+
+                    // Update stats display
+                    document.getElementById('totalAttendance').textContent = total;
+                    document.getElementById('avgAttendance').textContent = avg;
+                    document.getElementById('highestDay').textContent = `${highestDay.date} (${highestDay.count})`;
+
+                    // Get chart context
                     const ctx = document.getElementById('attendanceChart').getContext('2d');
-                    new Chart(ctx, {
+
+                    // Determine gradient colors based on theme
+                    const isDarkMode = document.documentElement.classList.contains('dark');
+                    let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+
+                    if (isDarkMode) {
+                        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.6)');
+                        gradient.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
+                    } else {
+                        gradient.addColorStop(0, 'rgba(14, 165, 233, 0.6)');
+                        gradient.addColorStop(1, 'rgba(14, 165, 233, 0.05)');
+                    }
+
+                    // Create chart
+                    window.attendanceChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [{
                                 label: 'Attendance Count',
                                 data: counts,
-                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1
+                                backgroundColor: gradient,
+                                borderColor: isDarkMode ? 'rgba(56, 189, 248, 1)' : 'rgba(14, 165, 233, 1)',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                hoverBackgroundColor: isDarkMode ? 'rgba(56, 189, 248, 0.8)' : 'rgba(14, 165, 233, 0.8)'
                             }]
                         },
                         options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
                             scales: {
                                 y: {
-                                    beginAtZero: true
+                                    beginAtZero: true,
+                                    ticks: {
+                                        color: isDarkMode ? '#e5e7eb' : '#6b7280',
+                                        font: {
+                                            family: "'Poppins', sans-serif"
+                                        }
+                                    },
+                                    grid: {
+                                        color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        color: isDarkMode ? '#e5e7eb' : '#6b7280',
+                                        font: {
+                                            family: "'Poppins', sans-serif"
+                                        }
+                                    },
+                                    grid: {
+                                        color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                    }
                                 }
                             },
                             interaction: {
@@ -76,17 +411,72 @@
                             },
                             plugins: {
                                 tooltip: {
-                                    callbacks: {
-                                        label: function (context) {
-                                            return `Count: ${context.raw}`;
-                                        }
+                                    backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                                    titleColor: isDarkMode ? '#e5e7eb' : '#111827',
+                                    bodyColor: isDarkMode ? '#e5e7eb' : '#111827',
+                                    titleFont: {
+                                        family: "'Poppins', sans-serif",
+                                        size: 14
+                                    },
+                                    bodyFont: {
+                                        family: "'Poppins', sans-serif",
+                                        size: 13
+                                    },
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    displayColors: false,
+                                    borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                                    borderWidth: 1
+                                },
+                                legend: {
+                                    labels: {
+                                        font: {
+                                            family: "'Poppins', sans-serif"
+                                        },
+                                        color: isDarkMode ? '#e5e7eb' : '#6b7280'
                                     }
                                 }
+                            },
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart'
                             }
                         }
                     });
                 })
-                .catch(error => console.error("Error fetching attendance data:", error));
+                .catch(error => {
+                    console.error("Error fetching attendance data:", error);
+                    showToast("Failed to load attendance data", "error");
+                    document.querySelector('.chart-container').innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-gray-500 dark:text-gray-400">Failed to load attendance data</p>
+                        </div>
+                    `;
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Initialize with weekly data
+            fetchAttendanceData('week');
+
+            // Set up period filter buttons
+            document.querySelectorAll('.time-filter-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.time-filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    // Fetch data for selected period
+                    fetchAttendanceData(this.dataset.period);
+                });
+            });
         });
     </script>
 </body>

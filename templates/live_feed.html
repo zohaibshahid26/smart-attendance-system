@@ -4,75 +4,510 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Feed</title>
+    <title>Live Feed - Smart Attendance System</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
+        .card-hover {
+            transition: all 0.3s ease;
         }
 
-        h1 {
-            color: #333;
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
         }
 
         #liveFeed {
-            border: 2px solid #333;
-            margin-bottom: 20px;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
         }
 
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
         }
 
-        button:hover {
-            background-color: #0056b3;
+        .status-indicator.recording {
+            animation: blink 1.5s ease infinite;
         }
 
-        #message {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #333;
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+                background-color: #EF4444;
+            }
+
+            50% {
+                opacity: 0.6;
+                background-color: #EF4444;
+            }
         }
     </style>
 </head>
 
-<body id="body">
-    <h1>Live Feed</h1>
-    <div>
-        <img id="liveFeed" src="{{ url_for('attendance.video_feed') }}" width="640" height="480">
-    </div>
-    <button onclick="markAttendance()">Mark Attendance</button>
-    <button onclick="window.location.href='/'">Back to Dashboard</button>
-    <p id="message"></p>
+<body class="bg-gray-50 font-[Poppins] min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-300">
+    <!-- Toast notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden max-w-md p-4 rounded-lg shadow-lg toast"></div>
+
+    <header class="bg-white shadow-md sticky top-0 z-40 dark:bg-gray-800 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-500 mr-3" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Live Attendance Feed</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleDarkMode()" aria-label="Toggle dark mode"
+                    class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 hidden dark:block"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 block dark:hidden"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                </button>
+                <button onclick="goToDashboard()"
+                    class="group flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div
+                class="bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 border-t-4 border-primary-500 card-hover transition-all duration-300">
+
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- Live feed container -->
+                    <div class="md:w-2/3">
+                        <div class="relative mb-4">
+                            <div class="status-indicator recording"></div>
+                            <div class="bg-black rounded-lg overflow-hidden">
+                                <img id="liveFeed" src="{{ url_for('attendance.video_feed') }}" alt="Live Camera Feed"
+                                    class="w-full h-auto">
+                            </div>
+                            <div
+                                class="absolute bottom-4 left-4 bg-black bg-opacity-60 px-3 py-1 rounded-lg text-white text-sm">
+                                <div class="flex items-center">
+                                    <span class="pulse inline-block h-2 w-2 rounded-full bg-red-500 mr-2"></span>
+                                    Live
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status and controls -->
+                    <div class="md:w-1/3 flex flex-col">
+                        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                            <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Status</h3>
+                            <div class="flex items-center mb-2">
+                                <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                <span class="text-sm">Camera active</span>
+                            </div>
+                            <div id="faceDetectionStatus" class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                                <span class="text-sm">Searching for faces...</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                            <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Latest Detection
+                            </h3>
+                            <div id="lastDetection" class="text-center text-gray-500 dark:text-gray-400 py-2">
+                                No detection yet
+                            </div>
+                        </div>
+
+                        <div class="mt-auto space-y-3">
+                            <button id="markAttendanceBtn" onclick="markAttendance()"
+                                class="w-full flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path
+                                        d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
+                                </svg>
+                                Mark Attendance
+                            </button>
+                            <div id="message"
+                                class="text-center text-sm font-medium text-gray-600 dark:text-gray-400 min-h-[24px]">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Attendance Summary -->
+            <div class="mt-6 bg-white shadow-lg rounded-xl p-6 dark:bg-gray-800 card-hover transition-all duration-300">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Today's Attendance Summary</h2>
+                    <div class="text-sm text-gray-500 dark:text-gray-400" id="attendanceCount">0 records</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Name</th>
+                                <th
+                                    class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Time</th>
+                                <th
+                                    class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                            id="attendanceLog">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                                    colspan="3">No attendance records for today</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
+        let isMarkingAttendance = false;
+        let currentUserAttendanceMarked = false;
+        let currentUserName = null;
+
+        // Initialize dark mode from preferences
+        if (localStorage.getItem("darkMode") === "true") {
+            document.documentElement.classList.add("dark");
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle("dark");
+            localStorage.setItem("darkMode", document.documentElement.classList.contains("dark"));
+        }
+
+        // Toast notification
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg toast ${type === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : type === 'info' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`;
+
+            // Show toast and hide after 3 seconds
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
         function markAttendance() {
+            if (isMarkingAttendance) return;
+
+            // If already marked, show toast reminder instead of making another request
+            if (currentUserAttendanceMarked && currentUserName) {
+                showToast(`${currentUserName}'s attendance was already marked today`, 'info');
+                return;
+            }
+
+            isMarkingAttendance = true;
+            const button = document.getElementById('markAttendanceBtn');
+            const originalText = button.innerHTML;
+
+            // Show loading state
+            button.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+            `;
+            button.disabled = true;
+
             fetch('/mark_attendance', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('message').innerText = data.message || data.error;
+                    if (data.error) {
+                        showToast(data.error, 'error');
+                        document.getElementById('message').innerText = data.error;
+                    } else {
+                        // Update face detection status
+                        const faceStatus = document.getElementById('faceDetectionStatus');
+                        faceStatus.innerHTML = `
+                            <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                            <span class="text-sm">Face identified</span>
+                        `;
+
+                        // Handle already marked attendance differently
+                        if (data.alreadyMarked) {
+                            showToast(data.message, 'info');
+                            document.getElementById('message').innerText = data.message;
+
+                            // Update button to show already marked state
+                            button.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                            button.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                            button.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                Already Marked
+                            `;
+                            currentUserAttendanceMarked = true;
+                        } else {
+                            showToast(data.message, 'success');
+                            document.getElementById('message').innerText = data.message;
+
+                            // Add to log only for new attendance
+                            updateAttendanceLog(data);
+                            currentUserAttendanceMarked = true;
+
+                            // Change button to already marked state after successful marking
+                            button.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+                            button.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                            button.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                Marked Successfully
+                            `;
+                        }
+
+                        // Update last detection
+                        if (data.name) {
+                            currentUserName = data.name;
+
+                            document.getElementById('lastDetection').innerHTML = `
+                                <div class="flex items-center justify-center">
+                                    <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 mr-3">
+                                        ${data.name.charAt(0)}
+                                    </div>
+                                    <div class="text-left">
+                                        <div class="font-medium text-gray-800 dark:text-gray-200">${data.name}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            ${data.alreadyMarked ? `Marked at ${data.time}` : 'Just now'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            if (data.alreadyMarked) {
+                                // Check if this user is already in the attendance log
+                                const logTable = document.getElementById('attendanceLog');
+                                if (!logTable.innerHTML.includes(data.name)) {
+                                    updateAttendanceLog({
+                                        name: data.name,
+                                        time: data.time,
+                                        alreadyMarked: true
+                                    });
+                                }
+                            }
+                        }
+                    }
                 })
                 .catch(error => {
+                    showToast('Error: ' + error, 'error');
                     document.getElementById('message').innerText = 'Error: ' + error;
+                })
+                .finally(() => {
+                    // Only restore button if attendance wasn't already marked
+                    if (!currentUserAttendanceMarked) {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    } else {
+                        button.disabled = false;
+                    }
+                    isMarkingAttendance = false;
                 });
         }
 
-        // Stop the camera when leaving the page
+        function updateAttendanceLog(data) {
+            const logTable = document.getElementById('attendanceLog');
+
+            // Clear "no records" message if it exists
+            if (logTable.innerHTML.includes('No attendance records for today')) {
+                logTable.innerHTML = '';
+            }
+
+            const timeString = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Add new record to table
+            const newRow = document.createElement('tr');
+            newRow.classList.add('bg-gray-50', 'dark:bg-gray-700');
+            newRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">${data.name || 'Unknown'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${timeString}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Present
+                    </span>
+                </td>
+            `;
+
+            // Add at the beginning
+            logTable.insertBefore(newRow, logTable.firstChild);
+
+            // Update attendance count
+            const count = logTable.querySelectorAll('tr').length;
+            document.getElementById('attendanceCount').textContent = `${count} ${count === 1 ? 'record' : 'records'}`;
+        }
+
+        function goToDashboard() {
+            // Stop the camera when leaving the page
+            fetch('/stop_camera', { method: 'POST' })
+                .finally(() => {
+                    window.location.href = '/';
+                });
+        }
+
+        // Stop camera when leaving the page
         window.addEventListener("beforeunload", function () {
             fetch('/stop_camera', { method: 'POST' });
         });
+
+        // Load today's attendance records when page loads
+        function loadTodayAttendance() {
+            const today = new Date().toISOString().split('T')[0];
+            fetch(`/fetch_attendance?date=${today}`)
+                .then(response => response.json())
+                .then(records => {
+                    if (records.length > 0) {
+                        const logTable = document.getElementById('attendanceLog');
+                        logTable.innerHTML = '';
+
+                        records.forEach(record => {
+                            const row = document.createElement('tr');
+                            row.classList.add('bg-gray-50', 'dark:bg-gray-700');
+
+                            // Parse the timestamp
+                            const recordTime = new Date(record.timestamp);
+                            const timeString = recordTime.toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+
+                            row.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">${record.name}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${timeString}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                        Present
+                                    </span>
+                                </td>
+                            `;
+
+                            logTable.appendChild(row);
+                        });
+
+                        // Update attendance count
+                        document.getElementById('attendanceCount').textContent =
+                            `${records.length} ${records.length === 1 ? 'record' : 'records'}`;
+
+                        // Check if current user is in the records
+                        const videoFeedSrc = document.getElementById('liveFeed').src;
+                        if (videoFeedSrc) {
+                            // Give the camera feed a moment to initialize
+                            setTimeout(() => {
+                                // Try to detect if a face is visible in the frame
+                                // This simulates face detection until real detection occurs
+                                document.getElementById('faceDetectionStatus').innerHTML = `
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                                    <span class="text-sm">Waiting for face detection...</span>
+                                `;
+                            }, 2000);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading attendance records:', error);
+                });
+        }
+
+        // Load attendance on page load
+        document.addEventListener('DOMContentLoaded', loadTodayAttendance);
     </script>
 </body>
 

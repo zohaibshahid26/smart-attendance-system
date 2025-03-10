@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+import dateutil.parser  # Add this import
 from bcrypt import checkpw, hashpw, gensalt
 import random
 import os
@@ -58,7 +59,8 @@ def forget_password():
         if admin:
             otp = random.randint(100000, 999999)
             session['otp'] = otp
-            session['otp_expiry'] = datetime.utcnow() + timedelta(minutes=2)
+            # Store expiry as ISO format string
+            session['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=2)).isoformat()
             session['username'] = username
             send_otp(admin["email"], otp)
             return jsonify({"success": True, "email": admin["email"]})
@@ -75,7 +77,8 @@ def resend_otp():
         if admin:
             otp = random.randint(100000, 999999)
             session['otp'] = otp
-            session['otp_expiry'] = datetime.utcnow() + timedelta(minutes=2)
+            # Store expiry as ISO format string
+            session['otp_expiry'] = (datetime.utcnow() + timedelta(minutes=2)).isoformat()
             send_otp(admin["email"], otp)
             return jsonify({"success": True})
     return jsonify({"success": False, "message": "Failed to resend OTP"})
@@ -87,10 +90,15 @@ def verify_otp():
         data = request.json
         otp = data.get("otp")
         if 'otp' in session and session['otp'] == int(otp):
-            if datetime.utcnow() < session['otp_expiry']:
-                return jsonify({"success": True})
-            else:
-                return jsonify({"success": False, "message": "OTP expired"})
+            # Parse the stored datetime string back to datetime object
+            try:
+                expiry_time = dateutil.parser.isoparse(session['otp_expiry'])
+                if datetime.utcnow() < expiry_time:
+                    return jsonify({"success": True})
+                else:
+                    return jsonify({"success": False, "message": "OTP expired"})
+            except (ValueError, TypeError):
+                return jsonify({"success": False, "message": "Session error, please try again"})
         else:
             return jsonify({"success": False, "message": "Invalid OTP"})
     return render_template("verify_otp.html")
