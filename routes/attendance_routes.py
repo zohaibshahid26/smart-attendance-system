@@ -335,6 +335,11 @@ def attendance_data():
     try:
         pipeline = [
             {
+                "$match": {
+                    "timestamp": {"$type": "date"}
+                }
+            },
+            {
                 "$group": {
                     "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}},
                     "count": {"$sum": 1}

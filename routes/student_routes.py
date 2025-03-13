@@ -58,26 +58,34 @@ def dashboard():
     
     # Calculate stats
     total_days = len(attendance_records)
-    present_days = sum(1 for record in attendance_records if record["status"] == "Present")
-    absent_days = total_days - present_days
-    attendance_percentage = (present_days / total_days * 100) if total_days > 0 else 0
+    present_days = sum(1 for record in attendance_records if record.get("status") == "Present")
     
+    attendance_percentage = (present_days / total_days * 100) if total_days > 0 else 0
+    # Calculate stats
+    total_days = len(attendance_records)
+    # Consider all records as "Present" if status is not specified
+    present_days = sum(1 for record in attendance_records if record.get("status", "Present") == "Present")
+    
+    attendance_percentage = (present_days / total_days * 100) if total_days > 0 else 0    
     stats = {
-        "attendance_percentage": attendance_percentage,
+        "attendance_percentage": round(attendance_percentage, 2),
         "present_days": present_days,
-        "absent_days": absent_days
+        "absent_days": total_days - present_days
     }
     
     # Prepare chart data
     chart_data = {
-        "labels": [record["timestamp"].split(" ")[0] for record in attendance_records],
-        "data": [1 if record["status"] == "Present" else 0 for record in attendance_records]
+        "labels": [record["timestamp"] if isinstance(record["timestamp"], str) else record["timestamp"].strftime("%Y-%m-%d") for record in attendance_records],
+        "data": [1 if record.get("status") == "Present" else 0 for record in attendance_records]
     }
     
     # Format attendance records
     for record in attendance_records:
         record["_id"] = str(record["_id"])
-        record["timestamp"] = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(record["timestamp"], str):
+            record["timestamp"] = record["timestamp"]
+        else:
+            record["timestamp"] = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
     
     return render_template("student/dashboard.html", student=student, attendance_records=attendance_records, stats=stats, chart_data=chart_data)
 
@@ -117,9 +125,14 @@ def attendance_history():
     student_id = session['student']['id']
     attendance_records = list(attendance_collection.find({"student_id": ObjectId(student_id)}))
     
+    # Calculate present and absent days
+    present_days = sum(1 for record in attendance_records if record.get("status", "Present") == "Present")
+    absent_days = len(attendance_records) - present_days
+
     # Format attendance records
     for record in attendance_records:
         record["_id"] = str(record["_id"])
-        record["timestamp"] = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+        if not isinstance(record["timestamp"], str):
+            record["timestamp"] = record["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
     
-    return render_template("student/attendance_history.html", attendance_records=attendance_records)
+    return render_template("student/attendance_history.html", attendance_records=attendance_records,present_count=present_days,absent_count=absent_days)
