@@ -1,6 +1,11 @@
-flask
-pymongo
-numpy
-opencv-python
-face-recognition
-dlib-bin
+face_recognition==1.3.0
+Flask==2.2.5
+numpy==1.23.5
+opencv_contrib_python==4.10.0.84
+opencv_python==4.10.0.84
+opencv_python_headless==4.10.0.84
+pymongo==4.11.2
+python-dotenv==1.0.1
+python_bcrypt==0.3.2
+python_dateutil==2.8.2
+scipy==1.11.4
